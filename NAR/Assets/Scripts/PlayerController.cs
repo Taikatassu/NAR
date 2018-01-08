@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // TODO: Create proper mesh for the player (spaceship, scifi-bike?)
+    // Implement animations / effect for when the player is moving sideways
+    //      - Or just tilt the player mesh slightly to the moving direction?
+
     [SerializeField]
     float zSpeed = 4f;
     [SerializeField]

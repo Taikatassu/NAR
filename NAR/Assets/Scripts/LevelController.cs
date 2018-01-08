@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class LevelController : MonoBehaviour
 {
+    // TODO: Modify obstacle spawning to provide more challenge (less downtime for the player)
+    //      - Spawn more obstacles in the direction of the player's movement (moving left, increase the likelyhood of obstacles spawning on the left)
+
+
     [SerializeField]
     GameObject obstaclePrefab;
     [SerializeField]

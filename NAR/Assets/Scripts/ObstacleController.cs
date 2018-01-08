@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ObstacleController : MonoBehaviour
 {
+    // TODO: Create a proper material / shader for the obstacles (remove obstacleGrid offsetting once obsolete)
+
     TriggerEventController triggerController;
     Material gridMaterial;
     float originalAlpha1 = 0.0f;

@@ -4,15 +4,17 @@ using UnityEngine;
 
 public class TrailController : MonoBehaviour
 {
-    // TODO: Figure out how to create a trail effect on non-moving object with a lineRenderer:
-    // https://answers.unity.com/questions/1032656/trail-renderer-on-a-non-moving-object.html
+    // https://answers.unity.com/questions/1343711/trail-effect-for-non-moving-object.html
+    // TODO: Fix jagged edges on the trail
+    // Non-billboard version of the trail
+    //      - Create a mesh for the trail in script, instead of using LineRenderer component?
 
     LineRenderer trail;
-    //Vector3 offset = new Vector3(0, 0, -0.25f);
-    //int trailResolution = 10;
-    //Vector3[] lineSegmentPositions;
-    //Vector3[] lineSegmentVelocities;
-    //float lagTime = 0.25f;
+
+    float lifetime = 0.5f;
+    float minimumVertexDistance = 0.05f;
+    List<Vector3> points;
+    Queue<float> spawnTimes = new Queue<float>();
 
     private void OnEnable()
     {
@@ -27,47 +29,46 @@ public class TrailController : MonoBehaviour
 
     private void InitializeTrail()
     {
-        //trail = GetComponent<LineRenderer>();
-        //trail.positionCount = trailResolution;
+        trail = GetComponent<LineRenderer>();
 
-        //lineSegmentPositions = new Vector3[trailResolution];
-        //lineSegmentVelocities = new Vector3[trailResolution];
-
-        //for (int i = 0; i < trailResolution; i++)
-        //{
-        //    lineSegmentVelocities[i] = Vector3.zero;
-
-        //    if (i == 0)
-        //    {
-        //        trail.SetPosition(i, transform.position);
-        //    }
-        //    else
-        //    {
-        //        lineSegmentPositions[i] = transform.position + (offset * i);
-        //    }
-        //}
+        points = new List<Vector3>() { transform.position }; 
+        trail.SetPositions(points.ToArray());
     }
 
     private void UpdateTrailPoints(Vector2 positionChange)
     {
-        //for (int i = 0; i < lineSegmentPositions.Length; i++)
-        //{
-        //    lineSegmentVelocities[i] = Vector3.zero;
+        while (spawnTimes.Count > 0 && spawnTimes.Peek() + lifetime < Time.time)
+        {
+            RemovePoint();
+        }
+        
+        Vector3 diff = new Vector3(-positionChange.x, 0, -positionChange.y);
+        for (int i = 1; i < points.Count; i++)
+        {
+            points[i] += diff;
+        }
+        
+        if (points.Count < 2 || Vector3.Distance(transform.position, points[1]) > minimumVertexDistance)
+        {
+            AddPoint(transform.position);
+        }
+        
+        points[0] = transform.position;
+        
+        trail.positionCount = points.Count;
+        trail.SetPositions(points.ToArray());
+    }
 
-        //    if (i == 0)
-        //    {
-        //        lineSegmentPositions[i] = transform.position;
-        //        trail.SetPosition(i, lineSegmentPositions[i]);
-        //    }
-        //    else
-        //    {
-        //        Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
-        //        lineSegmentPositions[i].x -= currentGridOffset.x;
-        //        lineSegmentPositions[i].z -= currentGridOffset.y;
-        //        trail.SetPosition(i, Vector3.SmoothDamp(trail.GetPosition(i), lineSegmentPositions[i], ref lineSegmentVelocities[i], lagTime));
-        //    }
+    void AddPoint(Vector3 position)
+    {
+        points.Insert(1, position);
+        spawnTimes.Enqueue(Time.time);
+    }
 
-        //}
+    void RemovePoint()
+    {
+        spawnTimes.Dequeue();
+        points.RemoveAt(points.Count - 1);
     }
 
     private void OnPlayerMovement(Vector2 playerMovementVector)
