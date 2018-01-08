@@ -34,3 +34,4 @@ sysinfo.txt
 *.unitypackage
 NAR/Library/
 OriginalAssets/
+NAR/Temp/

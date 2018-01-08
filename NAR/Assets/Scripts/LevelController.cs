@@ -10,7 +10,11 @@ public class LevelController : MonoBehaviour
     int obstaclePoolSize = 10;
     List<ObstacleController> obstaclePool = new List<ObstacleController>();
     float lastObstacleSpawnTime = 0f;
-    float obstacleSpawnCooldown = 0f;
+    float obstacleSpawnCooldownTimer = 0f;
+    float obstacleSpawnCooldownDuration = 0.5f;
+
+    int[] obstacleXAxisSpawnPositions = new int[13] { -4, -3, -2, -1, 0, 0, 0, 0, 0, 1, 2, 3, 4 };
+    int[] obstacleZAxisSpawnPositions = new int[4] { 6, 7, 8, 9 };
 
     bool spawnObstacles = false;
     bool runningLevelIntro = false;
@@ -59,7 +63,7 @@ public class LevelController : MonoBehaviour
         levelStartTime = Time.time;
         spawnObstacles = false;
         runningLevelIntro = true;
-        
+
         EventManager.BroadcastLevelIntroStart();
     }
 
@@ -108,14 +112,56 @@ public class LevelController : MonoBehaviour
 
             if (spawnObstacles)
             {
-                if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldown)
+                if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldownTimer)
                 {
-                    GetAvailableObstacle().Spawn(new Vector2(0f, 5f));
+                    SpawnObstacle();
                     lastObstacleSpawnTime = Time.time;
-                    obstacleSpawnCooldown = 1f;
+                    obstacleSpawnCooldownTimer = obstacleSpawnCooldownDuration;
                 }
             }
         }
+    }
+
+    private void SpawnObstacle()
+    {
+        Vector2 spawnPosition = new Vector2(0f, 5f);
+        spawnPosition.x = obstacleXAxisSpawnPositions[Random.Range(0, obstacleXAxisSpawnPositions.Length)];
+        spawnPosition.y = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
+
+        if (spawnPosition.x < -1 || spawnPosition.x > 1)
+        {
+            spawnPosition.y -= 2;
+        }
+
+        //Prevent multiple obstacles spawning at the same location
+        if (ObstacleExsistsInGivenPosition(spawnPosition))
+        {
+            SpawnObstacle();
+        }
+        else
+        {
+            GetAvailableObstacle().Spawn(spawnPosition);
+        }
+    }
+
+    private bool ObstacleExsistsInGivenPosition(Vector2 positionToCheck)
+    {
+        foreach (ObstacleController oc in obstaclePool)
+        {
+            if (oc.gameObject.activeSelf)
+            {
+                Vector3 existingObstaclePos = oc.transform.position;
+                Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
+                
+                if (Mathf.Approximately(existingObstaclePos.x + currentGridOffset.x, positionToCheck.x)
+                && Mathf.Approximately(existingObstaclePos.z + currentGridOffset.y, positionToCheck.y))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private ObstacleController GetAvailableObstacle()
