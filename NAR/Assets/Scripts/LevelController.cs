@@ -1,21 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class LevelController : MonoBehaviour
 {
     // TODO: Modify obstacle spawning to provide more challenge (less downtime for the player)
     // Make the environment more interesting
-    //      - Grid material changing from color to color
+    // DONE     - Grid material changing from color to color
     //      - Grid material glowing periodically (color values from light to dark to light etc, or add emission to grid shader and change emission value?)
-    // Score counter
-    //      - Score increases by time
+    // DONE Score counter
+    // DONE     - Score increases by time
     //      - Score multipliers at certain thresholds? (every minute or so)
     // Actual goal reaching?
     //      - Gameplay separated by distinct waypoints?
     // Collectibles?
     //      - Speed boosts
     //      - Score multipliers
+
+    // TODO: Implement color changing to the level goal element as well!
 
 
     [SerializeField]
@@ -55,6 +58,26 @@ public class LevelController : MonoBehaviour
     int currentEnvironmentColorIndex = 0;
     int nextEnvironmentColorIndex = 0;
 
+    [SerializeField]
+    Text scoreValueText;
+    bool countingScore = false;
+    float scorePerOneUnitTraveled = 1f;
+    float rawScore = 0f;
+    int currentScore = 0;
+
+    [SerializeField]
+    Text scorePopUpText;
+    Vector3 scorePopUpRefVelocity = Vector3.zero;
+    Vector3 scorePopUpPosition;
+    bool displayingScorePopUp = false;
+    float scorePopUpSmoothTime = 0.5f;
+    float scorePopUpDuration = 5f;
+    float scorePopUpStartTime = 0f;
+    float scorePopUpFadeStrength = 3f;
+    float scorePopUpTextOriginalAlpha = 0f;
+    float scorePopUpShadowOriginalAlpha = 0f;
+
+
     private void Start()
     {
         for (int i = 0; i < obstaclePoolSize; i++)
@@ -70,6 +93,10 @@ public class LevelController : MonoBehaviour
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnPlayerMovement += OnPlayerMovement;
+
+        SetScorePopUpText("");
+        scorePopUpTextOriginalAlpha = scorePopUpText.color.a;
+        scorePopUpShadowOriginalAlpha = scorePopUpText.GetComponent<Shadow>().effectColor.a;
     }
 
     private void OnDisable()
@@ -93,6 +120,77 @@ public class LevelController : MonoBehaviour
     }
 
     private void OnPlayerMovement(Vector2 movementVector)
+    {
+        CheckDirection(movementVector);
+
+        if (countingScore)
+        {
+            ManageScore(movementVector);
+        }
+    }
+
+    private void OnLevelRestart()
+    {
+        RestartLevel();
+    }
+
+    private void StartLevel()
+    {
+        levelStartTime = Time.time;
+        spawnObstacles = false;
+        runningLevelIntro = true;
+        countingScore = false;
+        rawScore = 0;
+        currentScore = 0;
+        SetScoreText(currentScore.ToString());
+
+        EventManager.BroadcastLevelIntroStart();
+        InitializeEnvironmentColors();
+    }
+
+    private void RestartLevel()
+    {
+        ResetObstacles();
+
+        InitializeScorePopUp();
+
+        StartLevel();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            EventManager.BroadcastPauseStateChange(!isPaused);
+        }
+
+        if (!isPaused)
+        {
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                EventManager.BroadcastLevelRestart();
+            }
+
+            if (runningLevelIntro)
+            {
+                ManageLevelIntro();
+            }
+
+            if (spawnObstacles)
+            {
+                ManageObstacleSpawning();
+            }
+
+            if (displayingScorePopUp)
+            {
+                PlayFinalScorePopUpEffect();
+            }
+
+            UpdateEnvironmentColor();
+        }
+    }
+
+    private void CheckDirection(Vector2 movementVector)
     {
         int newPlayerMovementDirection = 0;
 
@@ -125,73 +223,101 @@ public class LevelController : MonoBehaviour
         playerMovementDirection = newPlayerMovementDirection;
     }
 
-    private void StartLevel()
+    private void ManageLevelIntro()
     {
-        levelStartTime = Time.time;
-        spawnObstacles = false;
-        runningLevelIntro = true;
+        float levelStartTimer = levelIntroDuration - (Time.time - levelStartTime);
 
-        EventManager.BroadcastLevelIntroStart();
-        InitializeEnvironmentColors();
-    }
-
-    private void OnLevelRestart()
-    {
-        RestartLevel();
-    }
-
-    private void RestartLevel()
-    {
-        ResetObstacles();
-        StartLevel();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (levelStartTimer <= 0)
         {
-            EventManager.BroadcastPauseStateChange(!isPaused);
+            levelStartTimer = 0;
+        }
+        //Debug.Log("Level starting in: " + levelStartTimer);
+
+        if (Time.time - levelStartTime >= levelIntroDuration)
+        {
+            runningLevelIntro = false;
+            spawnObstacles = true;
+            EventManager.BroadcastLevelIntroFinished();
+            countingScore = true;
+        }
+    }
+
+    #region Score management
+    private void ManageScore(Vector2 movementVector)
+    {
+        rawScore += scorePerOneUnitTraveled * movementVector.y;
+        currentScore = Mathf.FloorToInt(rawScore);
+
+        SetScoreText(currentScore.ToString());
+    }
+
+    private void SetScoreText(string newScoreText)
+    {
+        scoreValueText.text = newScoreText;
+    }
+
+    private void InitializeScorePopUp()
+    {
+        ResetScorePopUp();
+
+        if (currentScore > 0)
+        {
+            scorePopUpStartTime = Time.time;
+            SetScorePopUpText(currentScore.ToString());
+            displayingScorePopUp = true;
+        }
+    }
+
+    private void ResetScorePopUp()
+    {
+        scorePopUpText.rectTransform.position = new Vector3(Screen.width / 2, Screen.height * 1.1f, 0);
+        scorePopUpPosition = new Vector3(Screen.width / 2, Screen.height * 0.75f, 0);
+        SetScorePopUpText("");
+        displayingScorePopUp = false;
+
+        Color scorePopUpFadeColor;
+        scorePopUpFadeColor = scorePopUpText.color;
+        scorePopUpFadeColor.a = scorePopUpTextOriginalAlpha;
+        scorePopUpText.color = scorePopUpFadeColor;
+
+        scorePopUpFadeColor = scorePopUpText.GetComponent<Shadow>().effectColor;
+        scorePopUpFadeColor.a = scorePopUpShadowOriginalAlpha;
+        scorePopUpText.GetComponent<Shadow>().effectColor = scorePopUpFadeColor;
+    }
+
+    private void SetScorePopUpText(string newPopUpText)
+    {
+        scorePopUpText.text = newPopUpText;
+    }
+
+    private void PlayFinalScorePopUpEffect()
+    {
+        scorePopUpText.rectTransform.position = Vector3.SmoothDamp(scorePopUpText.rectTransform.position,
+            scorePopUpPosition, ref scorePopUpRefVelocity, scorePopUpSmoothTime);
+
+        float timeSinceStartedPopUp = Time.time - scorePopUpStartTime;
+
+        if (timeSinceStartedPopUp > scorePopUpDuration * 0.75f)
+        {
+            Color scorePopUpFadeColor;
+            scorePopUpFadeColor = scorePopUpText.color;
+            scorePopUpFadeColor.a -= scorePopUpFadeStrength * Time.deltaTime;
+            Debug.Log(scorePopUpFadeColor.a);
+            scorePopUpText.color = scorePopUpFadeColor;
+
+            scorePopUpFadeColor = scorePopUpText.GetComponent<Shadow>().effectColor;
+            scorePopUpFadeColor.a -= scorePopUpFadeStrength * Time.deltaTime;
+            scorePopUpText.GetComponent<Shadow>().effectColor = scorePopUpFadeColor;
         }
 
-        if (!isPaused)
+        if (timeSinceStartedPopUp > scorePopUpDuration)
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                EventManager.BroadcastLevelRestart();
-            }
-
-            if (runningLevelIntro)
-            {
-                float levelStartTimer = levelIntroDuration - (Time.time - levelStartTime);
-
-                if (levelStartTimer <= 0)
-                {
-                    levelStartTimer = 0;
-                }
-                //Debug.Log("Level starting in: " + levelStartTimer);
-
-                if (Time.time - levelStartTime >= levelIntroDuration)
-                {
-                    runningLevelIntro = false;
-                    spawnObstacles = true;
-                    EventManager.BroadcastLevelIntroFinished();
-                }
-            }
-
-            if (spawnObstacles)
-            {
-                if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldownTimer)
-                {
-                    SpawnObstacle();
-                    lastObstacleSpawnTime = Time.time;
-                    obstacleSpawnCooldownTimer = obstacleSpawnCooldownDuration;
-                }
-            }
+            ResetScorePopUp();
         }
-
-        UpdateEnvironmentColor();
     }
+    #endregion
 
+    #region Environment color management
     private void InitializeEnvironmentColors()
     {
         currentEnvironmentColorIndex = 0;
@@ -208,11 +334,11 @@ public class LevelController : MonoBehaviour
             float timeSinceStarted = Time.time - environmentColorChangePhaseStartTime;
             float percentageCompleted = timeSinceStarted / environmentColorChangePhaseDuration;
             EventManager.BroadcastEnvironmentColorChange(
-                Color.Lerp(environmentColors[currentEnvironmentColorIndex], 
-                environmentColors[nextEnvironmentColorIndex], 
+                Color.Lerp(environmentColors[currentEnvironmentColorIndex],
+                environmentColors[nextEnvironmentColorIndex],
                 percentageCompleted));
 
-            if(percentageCompleted >= 1)
+            if (percentageCompleted >= 1)
             {
                 GoToNextEnvironmentColor();
             }
@@ -234,6 +360,18 @@ public class LevelController : MonoBehaviour
         }
 
         return 0;
+    }
+    #endregion
+
+    #region Obstacle spawning
+    private void ManageObstacleSpawning()
+    {
+        if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldownTimer)
+        {
+            SpawnObstacle();
+            lastObstacleSpawnTime = Time.time;
+            obstacleSpawnCooldownTimer = obstacleSpawnCooldownDuration;
+        }
     }
 
     private bool ObstacleExistsInGivenPosition(Vector2 positionToCheck)
@@ -398,4 +536,5 @@ public class LevelController : MonoBehaviour
             GetAvailableObstacle().Spawn(spawnPosition);
         }
     }
+    #endregion
 }

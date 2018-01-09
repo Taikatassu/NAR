@@ -5,6 +5,7 @@ using UnityEngine;
 public class TrailController : MonoBehaviour
 {
     // TODO: Fix holes in the trail
+    // Fix or hide (full screen fade) the initial pieces falling behind
     // Implement segment pooling!
 
     LineRenderer trail;
@@ -35,7 +36,6 @@ public class TrailController : MonoBehaviour
 
     private void InitializeTrail()
     {
-        Debug.Log("InitializeTrail");
         //trail = GetComponent<LineRenderer>();
 
         points = new List<Vector3>() { transform.position };
@@ -96,11 +96,9 @@ public class TrailController : MonoBehaviour
 
     private void AddNewSegment()
     {
-        Debug.Log("AddNewSegment, trailSegments.Count: " + trailSegments.Count);
-
         Transform newSegment = CreateNewTrailSegment();
         newSegment.position = transform.position;
-        trailSegments.Insert(1, newSegment);
+        trailSegments.Insert(0, newSegment);
     }
 
     private Transform CreateNewTrailSegment()
@@ -152,7 +150,6 @@ public class TrailController : MonoBehaviour
 
     private void ResetTrail()
     {
-        Debug.Log("ResetTrail");
         for (int i = 0; i < trailSegments.Count; i++)
         {
             Destroy(trailSegments[i].gameObject);

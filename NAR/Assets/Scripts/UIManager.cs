@@ -8,6 +8,8 @@ public class UIManager : MonoBehaviour
     GameObject buttonHolder;
     [SerializeField]
     GameObject pauseMenuHolder;
+    [SerializeField]
+    GameObject scoreDisplay;
 
     public enum EUIState
     {
@@ -68,14 +70,17 @@ public class UIManager : MonoBehaviour
             case EUIState.Disabled:
                 buttonHolder.SetActive(false);
                 pauseMenuHolder.SetActive(false);
+                scoreDisplay.SetActive(false);
                 break;
             case EUIState.HUD:
                 buttonHolder.SetActive(true);
                 pauseMenuHolder.SetActive(false);
+                scoreDisplay.SetActive(true);
                 break;
             case EUIState.PauseMenu:
                 buttonHolder.SetActive(false);
                 pauseMenuHolder.SetActive(true);
+                scoreDisplay.SetActive(false);
                 break;
             default:
                 break;
