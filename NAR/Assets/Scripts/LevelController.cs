@@ -103,7 +103,6 @@ public class LevelController : MonoBehaviour
                 if (Time.time - directionChangeTime >= directionChangeValidationTime)
                 {
                     validDirection = true;
-                    Debug.Log("Moving in valid direction: " + newPlayerMovementDirection);
                 }
             }
         }

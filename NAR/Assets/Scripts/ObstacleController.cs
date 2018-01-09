@@ -144,7 +144,8 @@ public class ObstacleController : MonoBehaviour
 
     private void OnTriggerEnterEvent(Collider col)
     {
-        Debug.Log("Obstacle hit!");
+        //Debug.Log("Obstacle hit!");
+        EventManager.BroadcastLevelRestart();
     }
 
     private void ModifyGridOffset(EOffsetDirection offsetToChange, float offsetValue, bool addToExistingOffset = true)
