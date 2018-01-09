@@ -45,6 +45,16 @@ public class LevelController : MonoBehaviour
 
     bool isPaused = false;
 
+    [SerializeField]
+    float environmentColorChangePhaseDuration = 15f;
+    [SerializeField]
+    bool colorChanging = true;
+    [SerializeField]
+    Color[] environmentColors;
+    float environmentColorChangePhaseStartTime = 0f;
+    int currentEnvironmentColorIndex = 0;
+    int nextEnvironmentColorIndex = 0;
+
     private void Start()
     {
         for (int i = 0; i < obstaclePoolSize; i++)
@@ -58,14 +68,14 @@ public class LevelController : MonoBehaviour
     private void OnEnable()
     {
         EventManager.OnLevelRestart += OnLevelRestart;
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnPlayerMovement += OnPlayerMovement;
     }
 
     private void OnDisable()
     {
         EventManager.OnLevelRestart -= OnLevelRestart;
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnPlayerMovement -= OnPlayerMovement;
     }
 
@@ -122,6 +132,7 @@ public class LevelController : MonoBehaviour
         runningLevelIntro = true;
 
         EventManager.BroadcastLevelIntroStart();
+        InitializeEnvironmentColors();
     }
 
     private void OnLevelRestart()
@@ -139,7 +150,7 @@ public class LevelController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            EventManager.BroadcastPauseStateChanged(!isPaused);
+            EventManager.BroadcastPauseStateChange(!isPaused);
         }
 
         if (!isPaused)
@@ -177,6 +188,52 @@ public class LevelController : MonoBehaviour
                 }
             }
         }
+
+        UpdateEnvironmentColor();
+    }
+
+    private void InitializeEnvironmentColors()
+    {
+        currentEnvironmentColorIndex = 0;
+        nextEnvironmentColorIndex = GetNextEnvironmentColorIndex();
+        environmentColorChangePhaseStartTime = Time.time;
+
+        EventManager.BroadcastEnvironmentColorChange(environmentColors[currentEnvironmentColorIndex]);
+    }
+
+    private void UpdateEnvironmentColor()
+    {
+        if (colorChanging)
+        {
+            float timeSinceStarted = Time.time - environmentColorChangePhaseStartTime;
+            float percentageCompleted = timeSinceStarted / environmentColorChangePhaseDuration;
+            EventManager.BroadcastEnvironmentColorChange(
+                Color.Lerp(environmentColors[currentEnvironmentColorIndex], 
+                environmentColors[nextEnvironmentColorIndex], 
+                percentageCompleted));
+
+            if(percentageCompleted >= 1)
+            {
+                GoToNextEnvironmentColor();
+            }
+        }
+    }
+
+    private void GoToNextEnvironmentColor()
+    {
+        currentEnvironmentColorIndex = nextEnvironmentColorIndex;
+        nextEnvironmentColorIndex = GetNextEnvironmentColorIndex();
+        environmentColorChangePhaseStartTime = Time.time;
+    }
+
+    private int GetNextEnvironmentColorIndex()
+    {
+        if (currentEnvironmentColorIndex + 1 < environmentColors.Length)
+        {
+            return currentEnvironmentColorIndex + 1;
+        }
+
+        return 0;
     }
 
     private bool ObstacleExistsInGivenPosition(Vector2 positionToCheck)

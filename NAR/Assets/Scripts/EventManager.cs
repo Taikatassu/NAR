@@ -8,6 +8,7 @@ public static class EventManager
     public delegate void Vector2Void(Vector2 vec2);
     public delegate Vector2 EmptyVector2();
     public delegate void BoolVoid(bool boolean);
+    public delegate void ColorVoid(Color color);
 
     public static event Vector2Void OnPlayerMovement;
     public static void BroadcastPlayerMovement(Vector2 playerMovement)
@@ -57,12 +58,21 @@ public static class EventManager
         }
     }
 
-    public static event BoolVoid OnPauseStateChanged;
-    public static void BroadcastPauseStateChanged(bool newState)
+    public static event BoolVoid OnPauseStateChange;
+    public static void BroadcastPauseStateChange(bool newState)
     {
-        if (OnPauseStateChanged != null)
+        if (OnPauseStateChange != null)
         {
-            OnPauseStateChanged(newState);
+            OnPauseStateChange(newState);
+        }
+    }
+
+    public static event ColorVoid OnEnvironmentColorChange;
+    public static void BroadcastEnvironmentColorChange(Color newColor)
+    {
+        if (OnEnvironmentColorChange != null)
+        {
+            OnEnvironmentColorChange(newColor);
         }
     }
 }

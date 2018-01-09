@@ -42,12 +42,12 @@ public class CameraController : MonoBehaviour
 
     private void OnEnable()
     {
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
     }
 
     private void OnDisable()
     {
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
     }
 
     private void OnPauseStateChanged(bool newState)

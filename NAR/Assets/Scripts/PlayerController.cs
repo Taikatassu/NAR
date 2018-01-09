@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour
     // TODO: Create proper mesh for the player (spaceship, scifi-bike?)
     // Implement animations / effect for when the player is moving sideways
     //      - Or just tilt the player mesh slightly to the moving direction?
+    // Add a sideways dash feature? (cooldown / double tap to activate?)
 
     [SerializeField]
     float zSpeed = 4f;
@@ -28,7 +29,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
         EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
         EventManager.OnLevelRestart += OnLevelRestart;
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
     }
 
     private void OnDisable()
@@ -36,7 +37,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroStart -= OnLevelIntroStart;
         EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
         EventManager.OnLevelRestart -= OnLevelRestart;
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
     }
 
     private void OnPauseStateChanged(bool newState)

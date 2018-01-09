@@ -246,6 +246,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trailMaterial: {fileID: 2100000, guid: f7879ad513f38194591f2370bad1fd1d, type: 2}
+  lifetime: 0.5
+  minimumVertexDistance: 0.5
 --- !u!1 &78795453
 GameObject:
   m_ObjectHideFlags: 0
@@ -795,6 +797,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   obstaclePrefab: {fileID: 1958918315028408, guid: ce0295216b528424baa0d991b1c94540,
     type: 2}
+  environmentColorChangePhaseDuration: 60
+  colorChanging: 1
+  environmentColors:
+  - {r: 0, g: 0.429158, b: 0.6838235, a: 1}
+  - {r: 0, g: 0.72794116, b: 0.005020243, a: 1}
+  - {r: 0.46247458, g: 0, b: 0.7058823, a: 1}
 --- !u!4 &238245844
 Transform:
   m_ObjectHideFlags: 0
@@ -944,7 +952,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   zSpeed: 5
-  xSpeed: 3
+  xSpeed: 4
 --- !u!1 &346266273
 GameObject:
   m_ObjectHideFlags: 0
@@ -4558,7 +4566,6 @@ GameObject:
   m_Component:
   - component: {fileID: 464689332}
   - component: {fileID: 464689335}
-  - component: {fileID: 464689334}
   - component: {fileID: 464689333}
   m_Layer: 0
   m_Name: Cube
@@ -4614,18 +4621,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!65 &464689334
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 464689331}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!33 &464689335
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -5702,8 +5697,8 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 2
+  m_Radius: 0.45
+  m_Height: 1.9
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!33 &1495833533

@@ -18,13 +18,13 @@ public class UIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
     }
 
     private void OnDisable()
     {
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
     }
 
@@ -47,12 +47,12 @@ public class UIManager : MonoBehaviour
 
     public void PauseButtonPressed(bool newState)
     {
-        EventManager.BroadcastPauseStateChanged(newState);
+        EventManager.BroadcastPauseStateChange(newState);
     }
 
     public void RestartButtonPressed()
     {
-        EventManager.BroadcastPauseStateChanged(false);
+        EventManager.BroadcastPauseStateChange(false);
         EventManager.BroadcastLevelRestart();
     }
 

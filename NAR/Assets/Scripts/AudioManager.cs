@@ -10,13 +10,13 @@ public class AudioManager : MonoBehaviour
     private void OnEnable()
     {
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
     }
 
     private void OnDisable()
     {
         EventManager.OnLevelIntroStart -= OnLevelIntroStart;
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
     }
 
     private void OnPauseStateChanged(bool newState)

@@ -24,6 +24,7 @@ public class GroundGridController : MonoBehaviour
         EventManager.OnPlayerMovement += OnPlayerMovement;
         EventManager.OnRequestGridOffset += OnRequestGridOffset;
         EventManager.OnLevelRestart += OnLevelRestart;
+        EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
     }
 
     private void OnDisable()
@@ -31,6 +32,7 @@ public class GroundGridController : MonoBehaviour
         EventManager.OnPlayerMovement -= OnPlayerMovement;
         EventManager.OnRequestGridOffset -= OnRequestGridOffset;
         EventManager.OnLevelRestart -= OnLevelRestart;
+        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
     }
 
     private void OnLevelRestart()
@@ -93,5 +95,12 @@ public class GroundGridController : MonoBehaviour
     {
         Vector2 gridOffset = new Vector2(gridMaterial.GetFloat("_PosXOffset"), gridMaterial.GetFloat("_PosZOffset"));
         return gridOffset;
+    }
+
+    private void OnEnvironmentColorChange(Color color)
+    {
+        float oldAlpha = gridMaterial.GetColor("_GridColor").a;
+        color.a = oldAlpha;
+        gridMaterial.SetColor("_GridColor", color);
     }
 }

@@ -56,7 +56,7 @@ public class ObstacleController : MonoBehaviour
     private void OnDisable()
     {
         EventManager.OnPlayerMovement -= OnPlayerMovement;
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
     }
 
@@ -74,7 +74,8 @@ public class ObstacleController : MonoBehaviour
         transform.position = new Vector3(spawnPosition.x, 0, spawnPosition.y);
 
         EventManager.OnPlayerMovement += OnPlayerMovement;
-        EventManager.OnPauseStateChanged += OnPauseStateChanged;
+        EventManager.OnPauseStateChange += OnPauseStateChanged;
+        EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
 
         Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
@@ -89,7 +90,8 @@ public class ObstacleController : MonoBehaviour
     public void Despawn()
     {
         EventManager.OnPlayerMovement -= OnPlayerMovement;
-        EventManager.OnPauseStateChanged -= OnPauseStateChanged;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
+        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
         gameObject.SetActive(false);
 
@@ -146,6 +148,13 @@ public class ObstacleController : MonoBehaviour
     {
         //Debug.Log("Obstacle hit!");
         EventManager.BroadcastLevelRestart();
+    }
+
+    private void OnEnvironmentColorChange(Color color)
+    {
+        float oldAlpha = gridMaterial.GetColor("_GridColor").a;
+        color.a = oldAlpha;
+        gridMaterial.SetColor("_GridColor", color);
     }
 
     private void ModifyGridOffset(EOffsetDirection offsetToChange, float offsetValue, bool addToExistingOffset = true)
