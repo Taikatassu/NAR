@@ -54,7 +54,7 @@ public class PlayerController : MonoBehaviour
         if (!isPaused)
         {
             //"Move player forward" automatically
-            EventManager.BroadcastPlayerMovement(new Vector2(0, zSpeed * Time.deltaTime));
+            //EventManager.BroadcastPlayerMovement(new Vector2(0, zSpeed * Time.deltaTime));
 
             if (!controlsLocked)
             {
@@ -74,10 +74,12 @@ public class PlayerController : MonoBehaviour
                 float targetXVelocity = xSpeed * input;
                 currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refVelocity, xAcceleration);
                 //Move player on x axis according current velocity
-                EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, 0));
+                //EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, 0));
 
                 input = 0;
             }
+
+            EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, zSpeed * Time.deltaTime));
         }
     }
 
