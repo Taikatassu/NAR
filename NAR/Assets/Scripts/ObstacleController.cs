@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(ObjectMovementController))]
 public class ObstacleController : MonoBehaviour
 {
     // TODO: Create a proper material / shader for the obstacles (remove obstacleGrid offsetting once obsolete)
 
+    ObjectMovementController movementController;
     TriggerEventController triggerController;
     Material gridMaterial;
     float originalAlpha1 = 0.0f;
@@ -40,6 +42,7 @@ public class ObstacleController : MonoBehaviour
     public void Initialize()
     {
         triggerController = GetComponentInChildren<TriggerEventController>(true);
+        movementController = GetComponent<ObjectMovementController>();
 
         gridMaterial = GetComponentInChildren<Renderer>().material;
         originalAlpha1 = gridMaterial.GetColor("_GridColor").a;
@@ -84,6 +87,8 @@ public class ObstacleController : MonoBehaviour
 
         obstacleMesh.localPosition = new Vector3(0, obstacleMeshStartPosY, 0);
 
+        movementController.Activate();
+
         gameObject.SetActive(true);
     }
 
@@ -93,6 +98,9 @@ public class ObstacleController : MonoBehaviour
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
+
+        movementController.Deactivate();
+
         gameObject.SetActive(false);
 
         Color color = gridMaterial.GetColor("_GridColor");
@@ -106,8 +114,6 @@ public class ObstacleController : MonoBehaviour
 
     private void OnPlayerMovement(Vector2 playerMovementVector)
     {
-        transform.position -= new Vector3(playerMovementVector.x, 0, playerMovementVector.y);
-
         if (playerMovementVector.y != 0)
         {
             ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.y);
@@ -192,7 +198,6 @@ public class ObstacleController : MonoBehaviour
         {
             gridMaterial.SetFloat(offsetFloatName, offsetValue);
         }
-
     }
 
     private void RunSpawnAnimation()
