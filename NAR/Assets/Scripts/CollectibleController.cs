@@ -5,19 +5,20 @@ using UnityEngine;
 [RequireComponent(typeof(ObjectMovementController))]
 public class CollectibleController : MonoBehaviour
 {
+    // TODO: Effects on spawning and despawning
+    // More visible indication of the collectibles's position
+    //      - Light pillar?
+
     ObjectMovementController movementController;
+    [SerializeField]
     TriggerEventController triggerController;
+    [SerializeField]
+    ECollectibleType collectibleType;
 
     public enum ECollectibleType
     {
         ScoreMultiplier,
 
-    }
-
-    private void Start()
-    {
-        Initialize();
-        Spawn();
     }
 
     private void OnDisable()
@@ -27,13 +28,21 @@ public class CollectibleController : MonoBehaviour
 
     public void Initialize()
     {
-        triggerController = GetComponentInChildren<TriggerEventController>(true);
         movementController = GetComponent<ObjectMovementController>();
+
+        Despawn();
     }
 
-    public void Spawn()
+    public void Spawn(Vector2 spawnPosition)
     {
+        spawnPosition -= EventManager.BroadcastRequestGridOffset();
+        transform.position = new Vector3(spawnPosition.x, 0, spawnPosition.y);
+
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
+
+        movementController.Activate();
+
+        gameObject.SetActive(true);
     }
 
     public void Despawn()
@@ -47,9 +56,12 @@ public class CollectibleController : MonoBehaviour
 
     private void OnTriggerEnterEvent(Collider col)
     {
-        Debug.Log("Collectible collected");
-        // TODO: Broadcast collection event with collectible type
+        if (col.CompareTag("Player"))
+        {
+            Debug.Log("Collectible collected");
+            EventManager.BroadcastCollectibleCollected((int)collectibleType);
 
-        Despawn();
+            Despawn();
+        }
     }
 }

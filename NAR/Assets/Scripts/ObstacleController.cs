@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(ObjectMovementController))]
 public class ObstacleController : MonoBehaviour
 {
+    // TODO: Effects on spawning and despawning
     // TODO: Create a proper material / shader for the obstacles (remove obstacleGrid offsetting once obsolete)
 
     ObjectMovementController movementController;
@@ -39,6 +40,21 @@ public class ObstacleController : MonoBehaviour
         ZOffset
     }
 
+    private void OnDisable()
+    {
+        EventManager.OnPlayerMovement -= OnPlayerMovement;
+        EventManager.OnPauseStateChange -= OnPauseStateChanged;
+        triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
+    }
+
+    private void Update()
+    {
+        if (!isPaused)
+        {
+            RunSpawnAnimation();
+        }
+    }
+
     public void Initialize()
     {
         triggerController = GetComponentInChildren<TriggerEventController>(true);
@@ -56,25 +72,11 @@ public class ObstacleController : MonoBehaviour
         Despawn();
     }
 
-    private void OnDisable()
-    {
-        EventManager.OnPlayerMovement -= OnPlayerMovement;
-        EventManager.OnPauseStateChange -= OnPauseStateChanged;
-        triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
-    }
-
-    private void Update()
-    {
-        if (!isPaused)
-        {
-            RunSpawnAnimation();
-        }
-    }
-
     public void Spawn(Vector2 spawnPosition)
     {
         spawnPosition -= EventManager.BroadcastRequestGridOffset();
         transform.position = new Vector3(spawnPosition.x, 0, spawnPosition.y);
+        SetColor(EventManager.BroadcastRequestCurrentEnvironmentColor());
 
         EventManager.OnPlayerMovement += OnPlayerMovement;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
@@ -153,10 +155,18 @@ public class ObstacleController : MonoBehaviour
     private void OnTriggerEnterEvent(Collider col)
     {
         //Debug.Log("Obstacle hit!");
-        EventManager.BroadcastLevelRestart();
+        if (col.CompareTag("Player"))
+        {
+            EventManager.BroadcastLevelRestart();
+        }
     }
 
     private void OnEnvironmentColorChange(Color color)
+    {
+        SetColor(color);
+    }
+
+    private void SetColor(Color color)
     {
         float oldAlpha = gridMaterial.GetColor("_GridColor").a;
         color.a = oldAlpha;

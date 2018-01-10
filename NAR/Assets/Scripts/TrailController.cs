@@ -105,28 +105,34 @@ public class TrailController : MonoBehaviour
     {
         Transform newSegment = new GameObject().transform;
 
-        Transform newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
-        newSegmentSide.SetParent(newSegment);
-        newSegmentSide.localEulerAngles = new Vector3(0, 90, 0);
-        newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
-        newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
+        //Transform newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
+        //newSegmentSide.SetParent(newSegment);
+        //newSegmentSide.localEulerAngles = new Vector3(0, 90, 0);
+        //newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
+        //newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
-        newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
-        newSegmentSide.SetParent(newSegment);
-        newSegmentSide.localEulerAngles = new Vector3(0, -90, 0);
-        newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
-        newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
+        //newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
+        //newSegmentSide.SetParent(newSegment);
+        //newSegmentSide.localEulerAngles = new Vector3(0, -90, 0);
+        //newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
+        //newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
-        newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
-        newSegmentSide.SetParent(newSegment);
-        newSegmentSide.localEulerAngles = new Vector3(90, 0, 0);
-        newSegmentSide.localPosition = new Vector3(0, 0.4f, 0.5f);
-        newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
+        //newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
+        //newSegmentSide.SetParent(newSegment);
+        //newSegmentSide.localEulerAngles = new Vector3(90, 0, 0);
+        //newSegmentSide.localPosition = new Vector3(0, 0.4f, 0.5f);
+        //newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
-        newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
+        //newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
+        //newSegmentSide.SetParent(newSegment);
+        //newSegmentSide.localEulerAngles = new Vector3(-90, 0, 0);
+        //newSegmentSide.localPosition = new Vector3(0, -0.4f, 0.5f);
+        //newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
+
+        Transform newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
         newSegmentSide.SetParent(newSegment);
-        newSegmentSide.localEulerAngles = new Vector3(-90, 0, 0);
-        newSegmentSide.localPosition = new Vector3(0, -0.4f, 0.5f);
+        //newSegmentSide.localEulerAngles = new Vector3(0, 90, 0);
+        //newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
         newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
         newSegment.localScale = new Vector3(0.01f, 0.2f, 0.15f);

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraController_Chase : CameraController
 {
-    Vector3 cameraPosOffset = new Vector3(0, 0.8f, -2);
+    Vector3 cameraPosOffset = new Vector3(0.001681256f, 0.8729648f, -1.938178f);
 
     Vector3 velocity;
     float smoothTime = 0.1f;
@@ -35,7 +35,8 @@ public class CameraController_Chase : CameraController
 
     public override void ActivateCamera()
     {
-        cameraPosOffset = transform.position;
+        //cameraPosOffset = transform.position;
+        transform.position = cameraPosOffset;
         movementEffectStrengthPercentage = movementEffectStrengthPercentageMin;
         movementEffectStrenghtLerpStartTime = Time.time;
         movementEffectStrengthLerping = true;

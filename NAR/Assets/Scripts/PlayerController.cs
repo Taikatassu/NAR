@@ -14,13 +14,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     float xSpeed = 3f;
 
+    float speedMultiplier = 1f;
+    float speedMultiplierStartTime = 0f;
+    float speedMultiplierDuration = 12f;
+
     bool controlsLocked = false;
     bool leftInputButtonDown = false;
     bool rightInputButtonDown = false;
     int input = 0;
     float currentXVelocity = 0f;
-    float xAcceleration = 0.075f;
-    float refVelocity;
+    float xAccelerationLag = 0.075f;
+    float refXVelocity;
+    float currentZVelocity = 0f;
+    float zAccelerationLag = 0.25f;
+    float refZVelocity;
 
     bool isPaused = false;
 
@@ -30,6 +37,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
+        EventManager.OnCollectibleCollected += OnCollectibleCollected;
     }
 
     private void OnDisable()
@@ -38,6 +46,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
         EventManager.OnLevelRestart -= OnLevelRestart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
+        EventManager.OnCollectibleCollected -= OnCollectibleCollected;
     }
 
     private void OnPauseStateChanged(bool newState)
@@ -47,13 +56,49 @@ public class PlayerController : MonoBehaviour
 
     private void OnLevelRestart()
     {
+        ResetSpeed();
+    }
+
+    private void ResetSpeed()
+    {
         currentXVelocity = 0f;
+        currentZVelocity = zSpeed;
+        ResetSpeedMultiplier();
+    }
+
+    private void OnLevelIntroStart()
+    {
+        controlsLocked = true;
+        leftInputButtonDown = false;
+        rightInputButtonDown = false;
+        ResetSpeed();
+    }
+
+    private void OnLevelIntroFinished()
+    {
+        controlsLocked = false;
+    }
+
+    private void OnCollectibleCollected(int collectibleTypeIndex)
+    {
+        CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
+
+        switch (collectibleType)
+        {
+            case CollectibleController.ECollectibleType.ScoreMultiplier:
+                IncreaseSpeedMultiplier();
+                break;
+            default:
+                break;
+        }
     }
 
     private void Update()
     {
         if (!isPaused)
         {
+            ManageSpeedMultiplier();
+
             //"Move player forward" automatically
             //EventManager.BroadcastPlayerMovement(new Vector2(0, zSpeed * Time.deltaTime));
 
@@ -73,29 +118,42 @@ public class PlayerController : MonoBehaviour
 
                 //Accelerate movement on x axis towards desired velocity according to input
                 float targetXVelocity = xSpeed * input;
-                currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refVelocity, xAcceleration);
+                currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refXVelocity, xAccelerationLag);
                 //Move player on x axis according current velocity
                 //EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, 0));
 
                 input = 0;
             }
 
-            EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, zSpeed * Time.deltaTime));
+
+            float targetZVelocity = zSpeed * speedMultiplier;
+            currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
+            EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, currentZVelocity * Time.deltaTime));
         }
     }
 
-    private void OnLevelIntroStart()
+    private void ManageSpeedMultiplier()
     {
-        controlsLocked = true;
-        leftInputButtonDown = false;
-        rightInputButtonDown = false;
+        if (speedMultiplier > 1)
+        {
+            if (Time.time - speedMultiplierStartTime > speedMultiplierDuration)
+            {
+                ResetSpeedMultiplier();
+            }
+        }
     }
 
-    private void OnLevelIntroFinished()
+    private void IncreaseSpeedMultiplier()
     {
-        controlsLocked = false;
+        speedMultiplier += 0.25f;
+        speedMultiplierStartTime = Time.time;
     }
-    
+
+    private void ResetSpeedMultiplier()
+    {
+        speedMultiplier = 1f;
+    }
+
     public void XInputButtonPressed(int direction)
     {
         switch (direction)

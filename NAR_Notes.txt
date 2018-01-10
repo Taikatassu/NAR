@@ -1,0 +1,13 @@
+TODO:
+- Update the trail with coroutines
+- Score multiplier = hp against obstacles
+- Score = hp agains enemies
+- Color lerp: change hue instead of using Color.Lerp
+- Bloom glow with audio
+- Jump? (can jump over spawning obstacles)
+- Dash / barrelroll
+
+DONE:
+- Color changes slower (creates "chapters" within the level = feel of progression)
+- Make the trail segments with cubes instead of quads
+- Intro skipping

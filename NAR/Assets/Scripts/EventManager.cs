@@ -9,6 +9,8 @@ public static class EventManager
     public delegate Vector2 EmptyVector2();
     public delegate void BoolVoid(bool boolean);
     public delegate void ColorVoid(Color color);
+    public delegate Color EmptyColor();
+    public delegate void IntVoid(int integer);
 
     public static event Vector2Void OnPlayerMovement;
     public static void BroadcastPlayerMovement(Vector2 playerMovement)
@@ -73,6 +75,26 @@ public static class EventManager
         if (OnEnvironmentColorChange != null)
         {
             OnEnvironmentColorChange(newColor);
+        }
+    }
+
+    public static event EmptyColor OnRequestCurrentEnvironmentColor;
+    public static Color BroadcastRequestCurrentEnvironmentColor()
+    {
+        if(OnRequestCurrentEnvironmentColor != null)
+        {
+            return OnRequestCurrentEnvironmentColor();
+        }
+
+        return new Color();
+    }
+
+    public static event IntVoid OnCollectibleCollected;
+    public static void BroadcastCollectibleCollected(int collectibleType)
+    {
+        if(OnCollectibleCollected != null)
+        {
+            OnCollectibleCollected(collectibleType);
         }
     }
 }
