@@ -10,24 +10,29 @@ public class UIManager : MonoBehaviour
     GameObject pauseMenuHolder;
     [SerializeField]
     GameObject scoreDisplay;
+    [SerializeField]
+    GameObject skipIntroButtonHolder;
 
     public enum EUIState
     {
         Disabled,
         HUD,
         PauseMenu,
+        Intro,
     }
 
     private void OnEnable()
     {
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
+        EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
     }
 
     private void OnDisable()
     {
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
-        EventManager.OnLevelIntroStart += OnLevelIntroStart;
+        EventManager.OnLevelIntroStart -= OnLevelIntroStart;
+        EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
     }
 
     private void OnPauseStateChanged(bool newState)
@@ -43,6 +48,11 @@ public class UIManager : MonoBehaviour
     }
 
     private void OnLevelIntroStart()
+    {
+        ChangeUIState(EUIState.Intro);
+    }
+
+    private void OnLevelIntroFinished()
     {
         ChangeUIState(EUIState.HUD);
     }
@@ -71,16 +81,25 @@ public class UIManager : MonoBehaviour
                 buttonHolder.SetActive(false);
                 pauseMenuHolder.SetActive(false);
                 scoreDisplay.SetActive(false);
+                skipIntroButtonHolder.SetActive(false);
                 break;
             case EUIState.HUD:
                 buttonHolder.SetActive(true);
                 pauseMenuHolder.SetActive(false);
                 scoreDisplay.SetActive(true);
+                skipIntroButtonHolder.SetActive(false);
                 break;
             case EUIState.PauseMenu:
                 buttonHolder.SetActive(false);
                 pauseMenuHolder.SetActive(true);
                 scoreDisplay.SetActive(false);
+                skipIntroButtonHolder.SetActive(false);
+                break;
+            case EUIState.Intro:
+                buttonHolder.SetActive(false);
+                pauseMenuHolder.SetActive(false);
+                scoreDisplay.SetActive(false);
+                skipIntroButtonHolder.SetActive(true);
                 break;
             default:
                 break;

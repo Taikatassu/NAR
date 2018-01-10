@@ -181,6 +181,12 @@ public class LevelController : MonoBehaviour
         StartLevel();
     }
 
+    public void SkipIntro()
+    {
+        ResetScorePopUp();
+        FinishLevelIntro();
+    }
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -190,8 +196,7 @@ public class LevelController : MonoBehaviour
 
         if(runningLevelIntro && Input.GetKeyDown(KeyCode.Space))
         {
-            ResetScorePopUp();
-            FinishLevelIntro();
+            SkipIntro();
         }
 
         if (!isPaused)
