@@ -79,11 +79,11 @@ public class GroundGridController : MonoBehaviour
         }
     }
 
-    private void OnPlayerMovement(Vector2 playerMovementVector)
+    private void OnPlayerMovement(Vector3 playerMovementVector)
     {
-        if (playerMovementVector.y != 0)
+        if (playerMovementVector.z != 0)
         {
-            ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.y);
+            ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.z);
         }
         if (playerMovementVector.x != 0)
         {

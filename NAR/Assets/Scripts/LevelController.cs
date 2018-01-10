@@ -82,9 +82,7 @@ public class LevelController : MonoBehaviour
     float scorePopUpFadeStrength = 3f;
     float scorePopUpTextOriginalAlpha = 0f;
     float scorePopUpShadowOriginalAlpha = 0f;
-    int scoreMultiplier = 1;
-    float scoreMultiplierDuration = 12f;
-    float scoreMultiplierStartTime = 0f;
+    int currentScoreMultiplier = 1;
 
     bool isPaused = false;
 
@@ -108,7 +106,7 @@ public class LevelController : MonoBehaviour
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnPlayerMovement += OnPlayerMovement;
-        EventManager.OnCollectibleCollected += OnCollectibleCollected;
+        EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
         EventManager.OnRequestCurrentEnvironmentColor += OnRequestCurrentEnvironmentColor;
 
         SetScorePopUpText("");
@@ -121,7 +119,7 @@ public class LevelController : MonoBehaviour
         EventManager.OnLevelRestart -= OnLevelRestart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnPlayerMovement -= OnPlayerMovement;
-        EventManager.OnCollectibleCollected -= OnCollectibleCollected;
+        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
         EventManager.OnRequestCurrentEnvironmentColor -= OnRequestCurrentEnvironmentColor;
     }
 
@@ -138,7 +136,7 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private void OnPlayerMovement(Vector2 movementVector)
+    private void OnPlayerMovement(Vector3 movementVector)
     {
         CheckDirection(movementVector);
 
@@ -153,18 +151,9 @@ public class LevelController : MonoBehaviour
         RestartLevel();
     }
 
-    private void OnCollectibleCollected(int collectibleTypeIndex)
+    private void OnScoreMultiplierChange(int newScoreMultiplier)
     {
-        CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
-
-        switch (collectibleType)
-        {
-            case CollectibleController.ECollectibleType.ScoreMultiplier:
-                IncreaseScoreMultiplier();
-                break;
-            default:
-                break;
-        }
+        currentScoreMultiplier = newScoreMultiplier;
     }
 
     private void StartLevel()
@@ -188,7 +177,6 @@ public class LevelController : MonoBehaviour
         ResetCollectibles();
 
         InitializeScorePopUp();
-        ResetScoreMultiplier();
 
         StartLevel();
     }
@@ -240,7 +228,7 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private void CheckDirection(Vector2 movementVector)
+    private void CheckDirection(Vector3 movementVector)
     {
         int newPlayerMovementDirection = 0;
 
@@ -301,14 +289,12 @@ public class LevelController : MonoBehaviour
     }
 
     #region Score management
-    private void ManageScore(Vector2 movementVector)
+    private void ManageScore(Vector3 movementVector)
     {
-        ManageScoreMultiplier();
-
-        rawScore += scorePerOneUnitTraveled * scoreMultiplier * movementVector.y;
+        rawScore += scorePerOneUnitTraveled * currentScoreMultiplier * movementVector.z;
         currentScore = Mathf.FloorToInt(rawScore);
 
-        string scoreText = (scoreMultiplier > 1) ? currentScore.ToString() + " x" + scoreMultiplier.ToString() : currentScore.ToString();
+        string scoreText = (currentScoreMultiplier > 1) ? currentScore.ToString() + " x" + currentScoreMultiplier.ToString() : currentScore.ToString();
         SetScoreText(scoreText);
     }
 
@@ -374,28 +360,6 @@ public class LevelController : MonoBehaviour
         {
             ResetScorePopUp();
         }
-    }
-
-    private void ManageScoreMultiplier()
-    {
-        if (scoreMultiplier > 1)
-        {
-            if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
-            {
-                ResetScoreMultiplier();
-            }
-        }
-    }
-
-    private void IncreaseScoreMultiplier()
-    {
-        scoreMultiplier++;
-        scoreMultiplierStartTime = Time.time;
-    }
-
-    private void ResetScoreMultiplier()
-    {
-        scoreMultiplier = 1;
     }
     #endregion
 
@@ -474,7 +438,13 @@ public class LevelController : MonoBehaviour
     #region Collectible spawning
     private void ManageCollectibleSpawning()
     {
-        if (Time.time - lastCollectibleSpawnTime >= collectibleSpawnCooldownDuration)
+        float finalSpawnCooldownDuration = collectibleSpawnCooldownDuration - currentScoreMultiplier;
+        if(finalSpawnCooldownDuration < collectibleSpawnCooldownDuration / 3)
+        {
+            finalSpawnCooldownDuration = collectibleSpawnCooldownDuration / 3;
+        }
+
+        if (Time.time - lastCollectibleSpawnTime >= finalSpawnCooldownDuration)
         {
             SpawnCollectible();
             lastCollectibleSpawnTime = Time.time;
@@ -484,10 +454,10 @@ public class LevelController : MonoBehaviour
 
     private void SpawnCollectible()
     {
-        Vector2 spawnPosition; //= new Vector2(0f, 5f);
+        Vector3 spawnPosition = Vector3.zero;
         spawnPosition.x = collectibleXAxisSpawnPositions[Random.Range(0, collectibleXAxisSpawnPositions.Length)];
-        spawnPosition.y = collectibleZAxisSpawnPositions[Random.Range(0, collectibleZAxisSpawnPositions.Length)]
-            + (scoreMultiplier - 1);
+        spawnPosition.z = collectibleZAxisSpawnPositions[Random.Range(0, collectibleZAxisSpawnPositions.Length)]
+            + (currentScoreMultiplier - 1);
 
         // Prevent collectibles spawning at the same location as existing obstacles
         // TODO: Clear all nearby obstacles (large trigger that despawns all colliding obstacles?)
@@ -550,7 +520,7 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private bool ObstacleExistsInGivenPosition(Vector2 positionToCheck)
+    private bool ObstacleExistsInGivenPosition(Vector3 positionToCheck)
     {
         foreach (ObstacleController oc in obstaclePool)
         {
@@ -559,18 +529,8 @@ public class LevelController : MonoBehaviour
                 Vector3 existingObstaclePos = oc.transform.position;
                 Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
 
-                //Debug.Log("x.1: existingObstaclePos.x + currentGridOffset.x: " + (existingObstaclePos.x + currentGridOffset.x));
-                //Debug.Log("x.2: positionToCheck.x: " + positionToCheck.x);
-                //Debug.Log("x.3: Mathf.Abs((existingObstaclePos.x + currentGridOffset.x) - positionToCheck.x): " + Mathf.Abs((existingObstaclePos.x + currentGridOffset.x) - positionToCheck.x));
-                //Debug.Log("x.4: obstacleAtSamePositionThreshold: " + obstacleAtSamePositionThreshold);
-
-                //Debug.Log("y.1: existingObstaclePos.z + currentGridOffset.y: " + (existingObstaclePos.z + currentGridOffset.y));
-                //Debug.Log("y.2: positionToCheck.y: " + positionToCheck.y);
-                //Debug.Log("y.3: Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.y): " + Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.y));
-                //Debug.Log("y.4: obstacleAtSamePositionThreshold: " + obstacleAtSamePositionThreshold);
-
                 if (Mathf.Abs((existingObstaclePos.x + currentGridOffset.x) - positionToCheck.x) <= obstacleAtSamePositionThreshold
-                && Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.y) <= obstacleAtSamePositionThreshold)
+                && Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.z) <= obstacleAtSamePositionThreshold)
                 {
                     return true;
                 }
@@ -632,15 +592,10 @@ public class LevelController : MonoBehaviour
 
     private void SpawnRandomObstacle()
     {
-        Vector2 spawnPosition; //= new Vector2(0f, 5f);
+        Vector3 spawnPosition = Vector3.zero;
         spawnPosition.x = obstacleXAxisSpawnPositions[Random.Range(0, obstacleXAxisSpawnPositions.Length)];
-        spawnPosition.y = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
-            + (scoreMultiplier - 1);
-
-        //if (spawnPosition.x < -1 || spawnPosition.x > 1)
-        //{
-        //    spawnPosition.y -= 2;
-        //}
+        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
+            + (currentScoreMultiplier - 1);
 
         //Prevent multiple obstacles spawning at the same location
         if (ObstacleExistsInGivenPosition(spawnPosition))
@@ -673,8 +628,8 @@ public class LevelController : MonoBehaviour
 
     private void SpawnFrontObstacle()
     {
-        Vector2 spawnPosition = new Vector2(0f, 5f + (scoreMultiplier - 1));
-        spawnPosition.y = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
+        Vector3 spawnPosition = new Vector3(0f, 0f, 5f + (currentScoreMultiplier - 1));
+        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
 
         if (ObstacleExistsInGivenPosition(spawnPosition))
         {
@@ -688,7 +643,7 @@ public class LevelController : MonoBehaviour
 
     private void SpawnLeftObstacle()
     {
-        Vector2 spawnPosition = new Vector2(-3f, 4f + (scoreMultiplier - 1));
+        Vector3 spawnPosition = new Vector3(-3f, 0f, 4f + (currentScoreMultiplier - 1));
 
         if (ObstacleExistsInGivenPosition(spawnPosition))
         {
@@ -702,7 +657,7 @@ public class LevelController : MonoBehaviour
 
     private void SpawnRightObstacle()
     {
-        Vector2 spawnPosition = new Vector2(3f, 4f + (scoreMultiplier - 1));
+        Vector3 spawnPosition = new Vector3(3f, 0f, 4f + (currentScoreMultiplier - 1));
 
         if (ObstacleExistsInGivenPosition(spawnPosition))
         {

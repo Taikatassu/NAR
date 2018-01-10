@@ -33,10 +33,11 @@ public class CollectibleController : MonoBehaviour
         Despawn();
     }
 
-    public void Spawn(Vector2 spawnPosition)
+    public void Spawn(Vector3 spawnPosition)
     {
-        spawnPosition -= EventManager.BroadcastRequestGridOffset();
-        transform.position = new Vector3(spawnPosition.x, 0, spawnPosition.y);
+        Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
+        spawnPosition -= new Vector3(currentGridOffset.x, 0, currentGridOffset.y);
+        transform.position = spawnPosition;
 
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
 

@@ -5,7 +5,8 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     [SerializeField]
-    AudioSource backgroundMusicSource;
+    AudioSource[] backgroundMusicSources;
+    int backgroundMusicIndex = 0;
 
     private void OnEnable()
     {
@@ -19,20 +20,31 @@ public class AudioManager : MonoBehaviour
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
     }
 
+    private void PlayRandomBackgroundMusic()
+    {
+        for (int i = 0; i < backgroundMusicSources.Length; i++)
+        {
+            backgroundMusicSources[i].Stop();
+        }
+
+        backgroundMusicIndex = Random.Range(0, backgroundMusicSources.Length);
+        backgroundMusicSources[backgroundMusicIndex].Play();
+    }
+
     private void OnPauseStateChanged(bool newState)
     {
         if (newState)
         {
-            backgroundMusicSource.Pause();
+            backgroundMusicSources[backgroundMusicIndex].Pause();
         }
         else
         {
-            backgroundMusicSource.UnPause();
+            backgroundMusicSources[backgroundMusicIndex].UnPause();
         }
     }
 
     private void OnLevelIntroStart()
     {
-        backgroundMusicSource.Play();
+        PlayRandomBackgroundMusic();
     }
 }

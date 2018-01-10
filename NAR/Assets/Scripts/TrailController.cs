@@ -50,7 +50,7 @@ public class TrailController : MonoBehaviour
         trailSegments.Add(newSegment);
     }
 
-    private void UpdateTrailPoints(Vector2 positionChange)
+    private void UpdateTrailPoints(Vector3 positionChange)
     {
         while (spawnTimes.Count > 0 && spawnTimes.Peek() + lifetime < Time.time)
         {
@@ -58,11 +58,10 @@ public class TrailController : MonoBehaviour
             DeleteOldestSegment();
         }
 
-        Vector3 diff = new Vector3(-positionChange.x, 0, -positionChange.y);
         for (int i = 0; i < trailSegments.Count; i++)
         {
-            //points[i] += diff;
-            trailSegments[i].position += diff;
+            //points[i] -= positionChange;
+            trailSegments[i].position -= positionChange;
         }
 
         if (points.Count < 2 || Vector3.Distance(transform.position, trailSegments[1].position) > minimumVertexDistance)
@@ -164,7 +163,7 @@ public class TrailController : MonoBehaviour
         InitializeTrail();
     }
 
-    private void OnPlayerMovement(Vector2 playerMovementVector)
+    private void OnPlayerMovement(Vector3 playerMovementVector)
     {
         UpdateTrailPoints(playerMovementVector);
     }

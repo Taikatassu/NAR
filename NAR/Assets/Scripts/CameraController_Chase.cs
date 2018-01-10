@@ -73,11 +73,11 @@ public class CameraController_Chase : CameraController
         }
     }
 
-    private void OnPlayerMovement(Vector2 playerMovementVector)
+    private void OnPlayerMovement(Vector3 playerMovementVector)
     {
         if (chaseActive)
         {
-            transform.position -= new Vector3(playerMovementVector.x, 0, playerMovementVector.y) * movementEffectStrengthPercentage;
+            transform.position -= playerMovementVector * movementEffectStrengthPercentage;
         }
     }
 }

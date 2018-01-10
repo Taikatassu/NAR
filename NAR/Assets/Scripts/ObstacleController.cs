@@ -72,10 +72,11 @@ public class ObstacleController : MonoBehaviour
         Despawn();
     }
 
-    public void Spawn(Vector2 spawnPosition)
+    public void Spawn(Vector3 spawnPosition)
     {
-        spawnPosition -= EventManager.BroadcastRequestGridOffset();
-        transform.position = new Vector3(spawnPosition.x, 0, spawnPosition.y);
+        Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
+        spawnPosition -= new Vector3(currentGridOffset.x, 0, currentGridOffset.y);
+        transform.position = spawnPosition;
         SetColor(EventManager.BroadcastRequestCurrentEnvironmentColor());
 
         EventManager.OnPlayerMovement += OnPlayerMovement;
@@ -83,7 +84,6 @@ public class ObstacleController : MonoBehaviour
         EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
 
-        Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
         ModifyGridOffset(EOffsetDirection.XOffset, currentGridOffset.x, false);
         ModifyGridOffset(EOffsetDirection.ZOffset, currentGridOffset.y, false);
 
@@ -114,11 +114,11 @@ public class ObstacleController : MonoBehaviour
         gridMaterial.SetColor("_OutsideColor", color);
     }
 
-    private void OnPlayerMovement(Vector2 playerMovementVector)
+    private void OnPlayerMovement(Vector3 playerMovementVector)
     {
-        if (playerMovementVector.y != 0)
+        if (playerMovementVector.z != 0)
         {
-            ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.y);
+            ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.z);
         }
         if (playerMovementVector.x != 0)
         {
@@ -154,10 +154,9 @@ public class ObstacleController : MonoBehaviour
 
     private void OnTriggerEnterEvent(Collider col)
     {
-        //Debug.Log("Obstacle hit!");
         if (col.CompareTag("Player"))
         {
-            EventManager.BroadcastLevelRestart();
+            EventManager.BroadcastObstacleHit(gameObject);
         }
     }
 

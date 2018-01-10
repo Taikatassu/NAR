@@ -31,8 +31,8 @@ public class ObjectMovementController : MonoBehaviour
         EventManager.OnPlayerMovement -= OnPlayerMovement;
     }
 
-    private void OnPlayerMovement(Vector2 playerMovementVector)
+    private void OnPlayerMovement(Vector3 playerMovementVector)
     {
-        transform.position -= new Vector3(playerMovementVector.x, 0, playerMovementVector.y);
+        transform.position -= playerMovementVector;
     }
 }

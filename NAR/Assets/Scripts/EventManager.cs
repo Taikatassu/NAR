@@ -5,15 +5,16 @@ using UnityEngine;
 public static class EventManager
 {
     public delegate void EmptyVoid();
-    public delegate void Vector2Void(Vector2 vec2);
+    public delegate void Vector3Void(Vector3 vec2);
     public delegate Vector2 EmptyVector2();
     public delegate void BoolVoid(bool boolean);
     public delegate void ColorVoid(Color color);
     public delegate Color EmptyColor();
     public delegate void IntVoid(int integer);
+    public delegate void GameObjectVoid(GameObject gameObject);
 
-    public static event Vector2Void OnPlayerMovement;
-    public static void BroadcastPlayerMovement(Vector2 playerMovement)
+    public static event Vector3Void OnPlayerMovement;
+    public static void BroadcastPlayerMovement(Vector3 playerMovement)
     {
         if (OnPlayerMovement != null)
         {
@@ -81,7 +82,7 @@ public static class EventManager
     public static event EmptyColor OnRequestCurrentEnvironmentColor;
     public static Color BroadcastRequestCurrentEnvironmentColor()
     {
-        if(OnRequestCurrentEnvironmentColor != null)
+        if (OnRequestCurrentEnvironmentColor != null)
         {
             return OnRequestCurrentEnvironmentColor();
         }
@@ -92,9 +93,27 @@ public static class EventManager
     public static event IntVoid OnCollectibleCollected;
     public static void BroadcastCollectibleCollected(int collectibleType)
     {
-        if(OnCollectibleCollected != null)
+        if (OnCollectibleCollected != null)
         {
             OnCollectibleCollected(collectibleType);
+        }
+    }
+
+    public static event GameObjectVoid OnObstacleHit;
+    public static void BroadcastObstacleHit(GameObject hitObstacle)
+    {
+        if (OnObstacleHit != null)
+        {
+            OnObstacleHit(hitObstacle);
+        }
+    }
+
+    public static event IntVoid OnScoreMultiplierChange;
+    public static void BroadcastScoreMultiplierChange(int newMultiplier)
+    {
+        if (OnScoreMultiplierChange != null)
+        {
+            OnScoreMultiplierChange(newMultiplier);
         }
     }
 }

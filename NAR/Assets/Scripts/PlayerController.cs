@@ -14,20 +14,37 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     float xSpeed = 3f;
 
-    float speedMultiplier = 1f;
-    float speedMultiplierStartTime = 0f;
-    float speedMultiplierDuration = 12f;
+    int scoreMultiplier = 1;
+    float scoreMultiplierStartTime = 0f;
+    float scoreMultiplierDuration = 12f;
+    float speedMultiplierPerScoreMultiplier = 0.25f;
 
     bool controlsLocked = false;
-    bool leftInputButtonDown = false;
-    bool rightInputButtonDown = false;
+    bool leftInputButtonHeld = false;
+    bool rightInputButtonHeld = false;
     int input = 0;
     float currentXVelocity = 0f;
     float xAccelerationLag = 0.075f;
     float refXVelocity;
     float currentZVelocity = 0f;
-    float zAccelerationLag = 0.25f;
+    float zAccelerationLag = 0.1f;
     float refZVelocity;
+
+    float lastInputTime = 0f;
+    float dashTimeWindow = 0.2f;
+    float dashDuration = 0.05f;
+    float dashStartTime = 0f;
+    float dashInvulnerabilityDuration = 0.2f;
+    int lastInputKeyPressed = 0;
+    int dashDirection = 0;
+    bool isDashing = false;
+    float dashXSpeed = 14f;
+    float refDashVelocity;
+    float dashAccelerationLag = 0.025f;
+    float dashCooldownDuration = 0.35f;
+
+    float scoreMultiplierUseInvulnerabilityDuration = 0.5f;
+    float scoreMultiplierUseInvulnerabilityStartTime = 0f;
 
     bool isPaused = false;
 
@@ -38,6 +55,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnCollectibleCollected += OnCollectibleCollected;
+        EventManager.OnObstacleHit += OnObstacleHit;
     }
 
     private void OnDisable()
@@ -47,6 +65,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelRestart -= OnLevelRestart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnCollectibleCollected -= OnCollectibleCollected;
+        EventManager.OnObstacleHit -= OnObstacleHit;
     }
 
     private void OnPauseStateChanged(bool newState)
@@ -61,16 +80,17 @@ public class PlayerController : MonoBehaviour
 
     private void ResetSpeed()
     {
+        ResetDash();
         currentXVelocity = 0f;
         currentZVelocity = zSpeed;
-        ResetSpeedMultiplier();
+        ResetScoreMultiplier();
     }
 
     private void OnLevelIntroStart()
     {
         controlsLocked = true;
-        leftInputButtonDown = false;
-        rightInputButtonDown = false;
+        leftInputButtonHeld = false;
+        rightInputButtonHeld = false;
         ResetSpeed();
     }
 
@@ -86,11 +106,85 @@ public class PlayerController : MonoBehaviour
         switch (collectibleType)
         {
             case CollectibleController.ECollectibleType.ScoreMultiplier:
-                IncreaseSpeedMultiplier();
+                IncreaseScoreMultiplier();
                 break;
             default:
                 break;
         }
+    }
+
+    private void OnObstacleHit(GameObject hitObstacle)
+    {
+        // Check if invulnerable saves are not available
+        if (Time.time - dashStartTime > dashInvulnerabilityDuration 
+            && Time.time - scoreMultiplierUseInvulnerabilityStartTime > scoreMultiplierUseInvulnerabilityDuration)
+        {
+            if(!DecreaseScoreMultiplier())
+            {
+                EventManager.BroadcastLevelRestart();
+            }
+        }
+        else
+        {
+            hitObstacle.GetComponent<ObstacleController>().Despawn();
+        }
+    }
+
+    private void CheckForDashInput()
+    {
+        int newInputDirection = 0;
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            newInputDirection--;
+        }
+
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            newInputDirection++;
+        }
+
+        if (newInputDirection != 0)
+        {
+            if (lastInputKeyPressed == newInputDirection)
+            {
+                StartDash(newInputDirection);
+                newInputDirection = 0;
+            }
+
+            lastInputTime = Time.time;
+            lastInputKeyPressed = newInputDirection;
+        }
+
+        if (Time.time - lastInputTime > dashTimeWindow)
+        {
+            lastInputKeyPressed = 0;
+            lastInputButtonPressed = 0;
+        }
+    }
+
+    private void StartDash(int newDashDirection)
+    {
+        dashStartTime = Time.time;
+        isDashing = true;
+        dashDirection = newDashDirection;
+    }
+
+    private void Dash()
+    {
+        float dashTargetXVelocity = dashXSpeed * dashDirection;
+        currentXVelocity = Mathf.SmoothDamp(currentXVelocity, dashTargetXVelocity, ref refDashVelocity, dashAccelerationLag);
+
+        if (Time.time - dashStartTime > dashDuration)
+        {
+            ResetDash();
+        }
+    }
+
+    private void ResetDash()
+    {
+
+        isDashing = false;
     }
 
     private void Update()
@@ -99,17 +193,18 @@ public class PlayerController : MonoBehaviour
         {
             ManageSpeedMultiplier();
 
-            //"Move player forward" automatically
-            //EventManager.BroadcastPlayerMovement(new Vector2(0, zSpeed * Time.deltaTime));
-
-            if (!controlsLocked)
+            if (isDashing)
             {
-                if (leftInputButtonDown || Input.GetKey(KeyCode.A))
+                Dash();
+            }
+            else if (!controlsLocked)
+            {
+                if (leftInputButtonHeld || Input.GetKey(KeyCode.A))
                 {
                     input--;
                 }
 
-                if (rightInputButtonDown || Input.GetKey(KeyCode.D))
+                if (rightInputButtonHeld || Input.GetKey(KeyCode.D))
                 {
                     input++;
                 }
@@ -119,51 +214,82 @@ public class PlayerController : MonoBehaviour
                 //Accelerate movement on x axis towards desired velocity according to input
                 float targetXVelocity = xSpeed * input;
                 currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refXVelocity, xAccelerationLag);
-                //Move player on x axis according current velocity
-                //EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, 0));
 
                 input = 0;
+
+                if(Time.time - dashStartTime > dashCooldownDuration)
+                {
+                    CheckForDashInput();
+                }
             }
 
-
-            float targetZVelocity = zSpeed * speedMultiplier;
+            float targetZVelocity = zSpeed * ((scoreMultiplier - 1) * speedMultiplierPerScoreMultiplier + 1);
             currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
-            EventManager.BroadcastPlayerMovement(new Vector2(currentXVelocity * Time.deltaTime, currentZVelocity * Time.deltaTime));
+            
+            EventManager.BroadcastPlayerMovement(new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime);
         }
     }
 
     private void ManageSpeedMultiplier()
     {
-        if (speedMultiplier > 1)
+        if (scoreMultiplier > 1)
         {
-            if (Time.time - speedMultiplierStartTime > speedMultiplierDuration)
+            if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
             {
-                ResetSpeedMultiplier();
+                ResetScoreMultiplier();
             }
         }
     }
 
-    private void IncreaseSpeedMultiplier()
+    private void IncreaseScoreMultiplier()
     {
-        speedMultiplier += 0.25f;
-        speedMultiplierStartTime = Time.time;
+        scoreMultiplierStartTime = Time.time;
+        scoreMultiplier++;
+        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
     }
 
-    private void ResetSpeedMultiplier()
+    private bool DecreaseScoreMultiplier()
     {
-        speedMultiplier = 1f;
+        if(scoreMultiplier > 1)
+        {
+            scoreMultiplierUseInvulnerabilityStartTime = Time.time;
+            scoreMultiplier--;
+            EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
+            return true;
+        }
+
+        return false;
     }
 
+    private void ResetScoreMultiplier()
+    {
+        scoreMultiplier = 1;
+        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
+    }
+
+    int lastInputButtonPressed = 0;
     public void XInputButtonPressed(int direction)
     {
         switch (direction)
         {
             case -1:
-                leftInputButtonDown = true;
+                leftInputButtonHeld = true;
                 break;
             case 1:
-                rightInputButtonDown = true;
+                rightInputButtonHeld = true;
                 break;
+        }
+
+        if (!controlsLocked)
+        {
+            if (direction == lastInputButtonPressed)
+            {
+                StartDash(direction);
+                direction = 0;
+            }
+
+            lastInputTime = Time.time;
+            lastInputButtonPressed = direction;
         }
     }
 
@@ -172,10 +298,10 @@ public class PlayerController : MonoBehaviour
         switch (direction)
         {
             case -1:
-                leftInputButtonDown = false;
+                leftInputButtonHeld = false;
                 break;
             case 1:
-                rightInputButtonDown = false;
+                rightInputButtonHeld = false;
                 break;
         }
     }
