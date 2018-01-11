@@ -62,7 +62,7 @@ public class LevelController : MonoBehaviour
     float environmentColorPhaseStartTime = 0f;
     float environmentColorChangeStartTime = 0f;
     int currentEnvironmentColorIndex = 0;
-    bool chaningColors = false;
+    int chaningColors = 0;
 
     [SerializeField]
     Text scoreValueText;
@@ -150,9 +150,13 @@ public class LevelController : MonoBehaviour
     {
         RestartLevel();
     }
-
-    private void OnScoreMultiplierChange(int newScoreMultiplier)
+    
+    private void OnScoreMultiplierChange(int newScoreMultiplier, int multiplierTier)
     {
+        currentEnvironmentColorIndex = multiplierTier;
+        currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
+        EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
+        
         currentScoreMultiplier = newScoreMultiplier;
     }
 
@@ -193,8 +197,7 @@ public class LevelController : MonoBehaviour
         {
             EventManager.BroadcastPauseStateChange(!isPaused);
         }
-
-        if(runningLevelIntro && Input.GetKeyDown(KeyCode.Space))
+        else if (runningLevelIntro && Input.anyKeyDown)
         {
             SkipIntro();
         }
@@ -371,7 +374,7 @@ public class LevelController : MonoBehaviour
     #region Environment color management
     private void InitializeEnvironmentColors()
     {
-        chaningColors = false;
+        chaningColors = 0;
         currentEnvironmentColorIndex = 0;
         environmentColorPhaseStartTime = Time.time;
 
@@ -381,36 +384,61 @@ public class LevelController : MonoBehaviour
 
     private void ManageEnvironmentColorChanging()
     {
-        if (chaningColors)
+        if (chaningColors != 0)
         {
-            ChangeColors();
+            ChangeColors(chaningColors);
         }
-        else if (Time.time - environmentColorPhaseStartTime > environmentColorPhaseDuration)
-        {
-            StartChangingColors();
-        }
+        //else if (Time.time - environmentColorPhaseStartTime > environmentColorPhaseDuration)
+        //{
+        //    StartChangingColors();
+        //}
     }
 
-    private void StartChangingColors()
+    private void StartChangingColors(int direction)
     {
         environmentColorChangeStartTime = Time.time;
-        chaningColors = true;
+        chaningColors = direction;
     }
 
-    private void ChangeColors()
+    private void ChangeColors(int direction)
     {
-        float timeSinceStarted = Time.time - environmentColorChangeStartTime;
-        float percentageCompleted = timeSinceStarted / environmentColorChangeDuration;
-        currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
-            environmentColors[GetNextEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
+        chaningColors = 0;
+        //float timeSinceStarted = Time.time - environmentColorChangeStartTime;
+        //float percentageCompleted = timeSinceStarted / environmentColorChangeDuration;
 
-        EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
-
-        if (percentageCompleted >= 1)
+        if (direction == 1)
         {
-            chaningColors = false;
             GoToNextEnvironmentColorIndex();
+
+
+
+            //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
+            //    environmentColors[GetNextEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
+
+            //if (percentageCompleted >= 1)
+            //{
+            //    chaningColors = 0;
+            //    GoToNextEnvironmentColorIndex();
+            //}
         }
+        else if (direction == -1)
+        {
+            GoToPreviousEnvironmentColorIndex();
+
+
+
+            //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
+            //    environmentColors[GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
+
+            //if (percentageCompleted >= 1)
+            //{
+            //    chaningColors = 0;
+            //    GoToPreviousEnvironmentColorIndex();
+            //}
+        }
+
+        currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
+        EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
     }
 
     private void GoToNextEnvironmentColorIndex()
@@ -419,11 +447,27 @@ public class LevelController : MonoBehaviour
         environmentColorPhaseStartTime = Time.time;
     }
 
+    private void GoToPreviousEnvironmentColorIndex()
+    {
+        currentEnvironmentColorIndex = GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex);
+        environmentColorPhaseStartTime = Time.time;
+    }
+
     private int GetNextEnvironmentColorIndex(int currentIndex)
     {
         if (currentIndex + 1 < environmentColors.Length)
         {
             return currentIndex + 1;
+        }
+
+        return 0;
+    }
+
+    private int GetPreviousEnvironmentColorIndex(int currentIndex)
+    {
+        if (currentIndex - 1 >= 0)
+        {
+            return currentIndex - 1;
         }
 
         return 0;
@@ -444,7 +488,7 @@ public class LevelController : MonoBehaviour
     private void ManageCollectibleSpawning()
     {
         float finalSpawnCooldownDuration = collectibleSpawnCooldownDuration - currentScoreMultiplier;
-        if(finalSpawnCooldownDuration < collectibleSpawnCooldownDuration / 3)
+        if (finalSpawnCooldownDuration < collectibleSpawnCooldownDuration / 3)
         {
             finalSpawnCooldownDuration = collectibleSpawnCooldownDuration / 3;
         }

@@ -36,7 +36,7 @@ public class CameraController_Chase : CameraController
     public override void ActivateCamera()
     {
         //cameraPosOffset = transform.position;
-        transform.position = cameraPosOffset;
+        //transform.position = cameraPosOffset;
         movementEffectStrengthPercentage = movementEffectStrengthPercentageMin;
         movementEffectStrenghtLerpStartTime = Time.time;
         movementEffectStrengthLerping = true;

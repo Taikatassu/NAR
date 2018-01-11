@@ -43,8 +43,9 @@ public class PlayerController : MonoBehaviour
     float dashAccelerationLag = 0.025f;
     float dashCooldownDuration = 0.35f;
 
-    float scoreMultiplierUseInvulnerabilityDuration = 0.5f;
+    float scoreMultiplierUseInvulnerabilityDuration = 1f;
     float scoreMultiplierUseInvulnerabilityStartTime = 0f;
+    int[] scoreMultiplierTiers = new int[6] {1, 5, 10, 15, 20, 25 };
 
     bool isPaused = false;
 
@@ -116,13 +117,10 @@ public class PlayerController : MonoBehaviour
     private void OnObstacleHit(GameObject hitObstacle)
     {
         // Check if invulnerable saves are not available
-        if (Time.time - dashStartTime > dashInvulnerabilityDuration 
+        if (Time.time - dashStartTime > dashInvulnerabilityDuration
             && Time.time - scoreMultiplierUseInvulnerabilityStartTime > scoreMultiplierUseInvulnerabilityDuration)
         {
-            if(!DecreaseScoreMultiplier())
-            {
-                EventManager.BroadcastLevelRestart();
-            }
+            DecreaseScoreMultiplier();
         }
         else
         {
@@ -134,12 +132,12 @@ public class PlayerController : MonoBehaviour
     {
         int newInputDirection = 0;
 
-        if (Input.GetKeyDown(KeyCode.A))
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
         {
             newInputDirection--;
         }
 
-        if (Input.GetKeyDown(KeyCode.D))
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
         {
             newInputDirection++;
         }
@@ -199,12 +197,12 @@ public class PlayerController : MonoBehaviour
             }
             else if (!controlsLocked)
             {
-                if (leftInputButtonHeld || Input.GetKey(KeyCode.A))
+                if (leftInputButtonHeld || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
                 {
                     input--;
                 }
 
-                if (rightInputButtonHeld || Input.GetKey(KeyCode.D))
+                if (rightInputButtonHeld || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
                 {
                     input++;
                 }
@@ -217,7 +215,7 @@ public class PlayerController : MonoBehaviour
 
                 input = 0;
 
-                if(Time.time - dashStartTime > dashCooldownDuration)
+                if (Time.time - dashStartTime > dashCooldownDuration)
                 {
                     CheckForDashInput();
                 }
@@ -225,7 +223,7 @@ public class PlayerController : MonoBehaviour
 
             float targetZVelocity = zSpeed * ((scoreMultiplier - 1) * speedMultiplierPerScoreMultiplier + 1);
             currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
-            
+
             EventManager.BroadcastPlayerMovement(new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime);
         }
     }
@@ -241,30 +239,50 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private int GetScoreMultiplierTierIndex(int scoreMultiplier)
+    {
+        for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
+        {
+            if(scoreMultiplier < scoreMultiplierTiers[i + 1])
+            {
+                return i;
+            }
+        }
+
+        return scoreMultiplierTiers.Length - 1;
+    }
+
     private void IncreaseScoreMultiplier()
     {
         scoreMultiplierStartTime = Time.time;
         scoreMultiplier++;
-        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
+
+        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
     }
 
-    private bool DecreaseScoreMultiplier()
+    private void DecreaseScoreMultiplier()
     {
-        if(scoreMultiplier > 1)
+        scoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(scoreMultiplier)] - 1;
+        
+        if(scoreMultiplier < 1)
         {
-            scoreMultiplierUseInvulnerabilityStartTime = Time.time;
-            scoreMultiplier--;
-            EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
-            return true;
+            scoreMultiplier = 1;
         }
 
-        return false;
+        if (scoreMultiplier == 1)
+        {
+            EventManager.BroadcastLevelRestart();
+            return;
+        }
+
+        scoreMultiplierUseInvulnerabilityStartTime = Time.time;
+        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
     }
 
     private void ResetScoreMultiplier()
     {
         scoreMultiplier = 1;
-        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier);
+        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
     }
 
     int lastInputButtonPressed = 0;

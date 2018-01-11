@@ -1,12 +1,23 @@
 TODO:
-- Update the trail with coroutines
-- Enemies (Shoot at player, if hit, player loses score. Destroyed when colliding with the player trail.)
+- Enemies 
+	- (Shoot at player, if hit, player loses score. Destroyed when colliding with the player trail.)
+	- Enemies have proper charging indication
+	- After charging, enemies charge forward and leave a trail behind
+	- The trail damages player if collided with
 - Score = hp agains enemies
 - Color lerp: change hue instead of using Color.Lerp
 - Bloom glow with audio
 - Jump? (can jump over spawning obstacles)
 - Tie color change to speed?
 - Tie background music to speed (change to faster paced music at certain speed multipliers)?
+- If actually publishing, consider monetisation model?
+	- Unlockable skins
+	- Collectibles function as currency
+	- Player can watch adds to earn extra currency (x2 currency for the next three games)
+	- Buying the full version halves the skin costs
+- Obstacle spawn rate follows audio bpm
+- Collectibles switch colors to complementary colors of the environment (from RGB colors)
+
 
 DONE:
 - Color changes slower (creates "chapters" within the level = feel of progression)
@@ -15,3 +26,4 @@ DONE:
 - Find license free music!
 - Dash / barrelroll
 - Score multiplier = hp against obstacles
+- Update the trail with coroutines

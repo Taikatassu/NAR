@@ -11,6 +11,7 @@ public static class EventManager
     public delegate void ColorVoid(Color color);
     public delegate Color EmptyColor();
     public delegate void IntVoid(int integer);
+    public delegate void IntIntVoid(int integer1, int integer2);
     public delegate void GameObjectVoid(GameObject gameObject);
 
     public static event Vector3Void OnPlayerMovement;
@@ -108,12 +109,12 @@ public static class EventManager
         }
     }
 
-    public static event IntVoid OnScoreMultiplierChange;
-    public static void BroadcastScoreMultiplierChange(int newMultiplier)
+    public static event IntIntVoid OnScoreMultiplierChange;
+    public static void BroadcastScoreMultiplierChange(int newMultiplier, int multiplierTier)
     {
         if (OnScoreMultiplierChange != null)
         {
-            OnScoreMultiplierChange(newMultiplier);
+            OnScoreMultiplierChange(newMultiplier, multiplierTier);
         }
     }
 }

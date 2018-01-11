@@ -247,7 +247,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   trailMaterial: {fileID: 2100000, guid: f7879ad513f38194591f2370bad1fd1d, type: 2}
   lifetime: 0.5
-  minimumVertexDistance: 0.5
+  minimumVertexDistance: 0.01
 --- !u!1 &78795453
 GameObject:
   m_ObjectHideFlags: 0
@@ -929,6 +929,8 @@ MonoBehaviour:
   - {r: 0.26029414, g: 0.6397059, b: 0, a: 1}
   - {r: 0.7058823, g: 0.42352936, b: 0, a: 1}
   - {r: 0.66693705, g: 0, b: 0.7058823, a: 1}
+  - {r: 0.72794116, g: 0, b: 0, a: 1}
+  - {r: 0.2872211, g: 0, b: 0.7058823, a: 1}
   scoreValueText: {fileID: 204702399}
   scorePopUpText: {fileID: 2000139089}
 --- !u!4 &238245844

@@ -59,7 +59,6 @@ public class CollectibleController : MonoBehaviour
     {
         if (col.CompareTag("Player"))
         {
-            Debug.Log("Collectible collected");
             EventManager.BroadcastCollectibleCollected((int)collectibleType);
 
             Despawn();

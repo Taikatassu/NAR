@@ -7,19 +7,18 @@ public class TrailController : MonoBehaviour
     // TODO: Fix holes in the trail
     // Fix or hide (full screen fade) the initial pieces falling behind
     // Implement segment pooling!
-
-    LineRenderer trail;
+    
     [SerializeField]
     Material trailMaterial;
-
     [SerializeField]
     float lifetime = 0.5f;
     [SerializeField]
     float minimumVertexDistance = 0.05f;
-    List<Vector3> points;
     Queue<float> spawnTimes;
 
     List<Transform> trailSegments;
+    
+    Vector3 lastPlayerMovementVector = Vector3.zero;
 
     private void OnEnable()
     {
@@ -36,11 +35,6 @@ public class TrailController : MonoBehaviour
 
     private void InitializeTrail()
     {
-        //trail = GetComponent<LineRenderer>();
-
-        points = new List<Vector3>() { transform.position };
-        //trail.SetPositions(points.ToArray());
-
         spawnTimes = new Queue<float>();
         trailSegments = new List<Transform>();
 
@@ -48,51 +42,56 @@ public class TrailController : MonoBehaviour
         newSegment.position = transform.position;
 
         trailSegments.Add(newSegment);
+        
+        InvokeRepeating("UpdateTrailPoints", 0f, 1f / 600);
     }
 
-    private void UpdateTrailPoints(Vector3 positionChange)
+    private void UpdateTrailPoints()
     {
         while (spawnTimes.Count > 0 && spawnTimes.Peek() + lifetime < Time.time)
         {
-            //RemovePoint();
             DeleteOldestSegment();
         }
 
         for (int i = 0; i < trailSegments.Count; i++)
         {
-            //points[i] -= positionChange;
-            trailSegments[i].position -= positionChange;
+            trailSegments[i].position -= lastPlayerMovementVector;
         }
 
-        if (points.Count < 2 || Vector3.Distance(transform.position, trailSegments[1].position) > minimumVertexDistance)
+        FillTrailGaps();
+        CheckSegmentPositionValidity();
+        CorrectTrailSegmentFacing();
+
+        lastPlayerMovementVector = Vector3.zero;
+    }
+
+    private void FillTrailGaps()
+    {
+        if (trailSegments.Count < 2 || Vector3.Distance(transform.position, trailSegments[1].position) > minimumVertexDistance)
         {
-            //AddPoint(transform.position);
             AddNewSegment();
         }
+    }
 
+    private void CheckSegmentPositionValidity()
+    {
+        for (int i = 1; i < trailSegments.Count - 1; i++)
+        {
+            if(trailSegments[i].position == trailSegments[i - 1].position)
+            {
+                trailSegments[i].position = (trailSegments[i - 1].position + trailSegments[i + 1].position) / 2f;
+            }
+        }
+    }
+
+    private void CorrectTrailSegmentFacing()
+    {
         for (int i = 0; i < trailSegments.Count - 1; i++)
         {
             trailSegments[i].LookAt(trailSegments[i + 1]);
         }
-
-        //points[0] = transform.position;
-
-        //trail.positionCount = points.Count;
-        //trail.SetPositions(points.ToArray());
     }
-
-    //void AddPoint(Vector3 position)
-    //{
-    //    points.Insert(1, position);
-    //    spawnTimes.Enqueue(Time.time);
-    //}
-
-    //void RemovePoint()
-    //{
-    //    spawnTimes.Dequeue();
-    //    points.RemoveAt(points.Count - 1);
-    //}
-
+    
     private void AddNewSegment()
     {
         Transform newSegment = CreateNewTrailSegment();
@@ -131,7 +130,7 @@ public class TrailController : MonoBehaviour
         Transform newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
         newSegmentSide.SetParent(newSegment);
         //newSegmentSide.localEulerAngles = new Vector3(0, 90, 0);
-        //newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
+        newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
         newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
         newSegment.localScale = new Vector3(0.01f, 0.2f, 0.15f);
@@ -155,6 +154,8 @@ public class TrailController : MonoBehaviour
 
     private void ResetTrail()
     {
+        CancelInvoke("UpdateTrailPoints");
+
         for (int i = 0; i < trailSegments.Count; i++)
         {
             Destroy(trailSegments[i].gameObject);
@@ -165,7 +166,8 @@ public class TrailController : MonoBehaviour
 
     private void OnPlayerMovement(Vector3 playerMovementVector)
     {
-        UpdateTrailPoints(playerMovementVector);
+        lastPlayerMovementVector = playerMovementVector;
+        //UpdateTrailPoints();
     }
 
     private void OnLevelRestart()
