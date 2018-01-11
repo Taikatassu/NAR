@@ -65,6 +65,7 @@ public static class EventManager
     public static event BoolVoid OnPauseStateChange;
     public static void BroadcastPauseStateChange(bool newState)
     {
+        Debug.Log("BroadcastPauseStateChange");
         if (OnPauseStateChange != null)
         {
             OnPauseStateChange(newState);

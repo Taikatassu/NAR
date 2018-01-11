@@ -50,17 +50,17 @@ public class LevelController : MonoBehaviour
     int[] collectibleXAxisSpawnPositions = new int[7] { -3, -2, -1, 0, 1, 2, 3 };
     int[] collectibleZAxisSpawnPositions = new int[4] { 10, 11, 12, 13 };
 
-    [SerializeField]
-    float environmentColorPhaseDuration = 50f;
-    [SerializeField]
-    float environmentColorChangeDuration = 10f;
+    //[SerializeField]
+    //float environmentColorPhaseDuration = 50f;
+    //[SerializeField]
+    //float environmentColorChangeDuration = 10f;
     [SerializeField]
     bool useChanginEnvironmentColors = true;
     [SerializeField]
     Color[] environmentColors;
     Color currentEnvironmentColor;
-    float environmentColorPhaseStartTime = 0f;
-    float environmentColorChangeStartTime = 0f;
+    //float environmentColorPhaseStartTime = 0f;
+    //float environmentColorChangeStartTime = 0f;
     int currentEnvironmentColorIndex = 0;
     int chaningColors = 0;
 
@@ -187,6 +187,7 @@ public class LevelController : MonoBehaviour
 
     public void SkipIntro()
     {
+        Debug.Log("Skip intro");
         ResetScorePopUp();
         FinishLevelIntro();
     }
@@ -197,8 +198,9 @@ public class LevelController : MonoBehaviour
         {
             EventManager.BroadcastPauseStateChange(!isPaused);
         }
-        else if (runningLevelIntro && Input.anyKeyDown)
+        else if (!isPaused & runningLevelIntro && Input.anyKeyDown)
         {
+            Debug.Log("Skip intro button pressed");
             SkipIntro();
         }
 
@@ -287,6 +289,7 @@ public class LevelController : MonoBehaviour
 
     private void FinishLevelIntro()
     {
+        Debug.Log("LevelController: FinishLevelIntro");
         runningLevelIntro = false;
         spawnObstacles = true;
         RandomizeCollectibleSpawnCooldownDuration();
@@ -376,7 +379,7 @@ public class LevelController : MonoBehaviour
     {
         chaningColors = 0;
         currentEnvironmentColorIndex = 0;
-        environmentColorPhaseStartTime = Time.time;
+        //environmentColorPhaseStartTime = Time.time;
 
         currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
         EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
@@ -396,7 +399,7 @@ public class LevelController : MonoBehaviour
 
     private void StartChangingColors(int direction)
     {
-        environmentColorChangeStartTime = Time.time;
+        //environmentColorChangeStartTime = Time.time;
         chaningColors = direction;
     }
 
@@ -444,13 +447,13 @@ public class LevelController : MonoBehaviour
     private void GoToNextEnvironmentColorIndex()
     {
         currentEnvironmentColorIndex = GetNextEnvironmentColorIndex(currentEnvironmentColorIndex);
-        environmentColorPhaseStartTime = Time.time;
+        //environmentColorPhaseStartTime = Time.time;
     }
 
     private void GoToPreviousEnvironmentColorIndex()
     {
         currentEnvironmentColorIndex = GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex);
-        environmentColorPhaseStartTime = Time.time;
+        //environmentColorPhaseStartTime = Time.time;
     }
 
     private int GetNextEnvironmentColorIndex(int currentIndex)

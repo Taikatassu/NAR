@@ -37,6 +37,7 @@ public class UIManager : MonoBehaviour
 
     private void OnPauseStateChanged(bool newState)
     {
+        Debug.Log("OnPauseStateChanged");
         if (newState)
         {
             ChangeUIState(EUIState.PauseMenu);
@@ -49,11 +50,13 @@ public class UIManager : MonoBehaviour
 
     private void OnLevelIntroStart()
     {
+        Debug.Log("OnLevelIntroStart");
         ChangeUIState(EUIState.Intro);
     }
 
     private void OnLevelIntroFinished()
     {
+        Debug.Log("OnLevelIntroFinished");
         ChangeUIState(EUIState.HUD);
     }
 
@@ -64,6 +67,7 @@ public class UIManager : MonoBehaviour
 
     public void RestartButtonPressed()
     {
+        Debug.Log("RestartButtonPressed");
         EventManager.BroadcastPauseStateChange(false);
         EventManager.BroadcastLevelRestart();
     }
@@ -75,6 +79,7 @@ public class UIManager : MonoBehaviour
 
     private void ChangeUIState(EUIState newState)
     {
+        Debug.Log("ChangeUIState");
         switch (newState)
         {
             case EUIState.Disabled:
