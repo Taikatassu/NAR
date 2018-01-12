@@ -7,7 +7,7 @@ public class TrailController : MonoBehaviour
     // TODO: Fix holes in the trail
     // Fix or hide (full screen fade) the initial pieces falling behind
     // Implement segment pooling!
-    
+
     [SerializeField]
     Material trailMaterial;
     [SerializeField]
@@ -17,7 +17,7 @@ public class TrailController : MonoBehaviour
     Queue<float> spawnTimes;
 
     List<Transform> trailSegments;
-    
+
     Vector3 lastPlayerMovementVector = Vector3.zero;
 
     private void OnEnable()
@@ -42,7 +42,7 @@ public class TrailController : MonoBehaviour
         newSegment.position = transform.position;
 
         trailSegments.Add(newSegment);
-        
+
         InvokeRepeating("UpdateTrailPoints", 0f, 1f / 600);
     }
 
@@ -77,7 +77,7 @@ public class TrailController : MonoBehaviour
     {
         for (int i = 1; i < trailSegments.Count - 1; i++)
         {
-            if(trailSegments[i].position == trailSegments[i - 1].position)
+            if (trailSegments[i].position == trailSegments[i - 1].position)
             {
                 trailSegments[i].position = (trailSegments[i - 1].position + trailSegments[i + 1].position) / 2f;
             }
@@ -91,7 +91,7 @@ public class TrailController : MonoBehaviour
             trailSegments[i].LookAt(trailSegments[i + 1]);
         }
     }
-    
+
     private void AddNewSegment()
     {
         Transform newSegment = CreateNewTrailSegment();
@@ -127,11 +127,12 @@ public class TrailController : MonoBehaviour
         //newSegmentSide.localPosition = new Vector3(0, -0.4f, 0.5f);
         //newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
 
-        Transform newSegmentSide = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-        newSegmentSide.SetParent(newSegment);
+        Transform newSegmentMesh = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+        newSegmentMesh.SetParent(newSegment);
         //newSegmentSide.localEulerAngles = new Vector3(0, 90, 0);
-        newSegmentSide.localPosition = new Vector3(0, 0, 0.5f);
-        newSegmentSide.GetComponent<Renderer>().material = trailMaterial;
+        newSegmentMesh.localPosition = new Vector3(0, 0, 0.5f);
+        newSegmentMesh.GetComponent<Renderer>().material = trailMaterial;
+        newSegmentMesh.gameObject.tag = "PlayerTrail";
 
         newSegment.localScale = new Vector3(0.01f, 0.2f, 0.15f);
         newSegment.SetParent(transform);

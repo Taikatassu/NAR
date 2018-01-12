@@ -13,6 +13,7 @@ public static class EventManager
     public delegate void IntVoid(int integer);
     public delegate void IntIntVoid(int integer1, int integer2);
     public delegate void GameObjectVoid(GameObject gameObject);
+    public delegate int EmptyInt();
 
     public static event Vector3Void OnPlayerMovement;
     public static void BroadcastPlayerMovement(Vector3 playerMovement)
@@ -117,5 +118,16 @@ public static class EventManager
         {
             OnScoreMultiplierChange(newMultiplier, multiplierTier);
         }
+    }
+
+    public static event EmptyInt OnRequestCurrentScoreMultiplier;
+    public static int BroadcastRequestCurrentScoreMultiplier()
+    {
+        if (OnRequestCurrentScoreMultiplier != null)
+        {
+            return OnRequestCurrentScoreMultiplier();
+        }
+
+        return 1;
     }
 }

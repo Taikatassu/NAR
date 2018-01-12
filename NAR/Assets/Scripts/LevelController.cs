@@ -16,10 +16,11 @@ public class LevelController : MonoBehaviour
 
     [SerializeField]
     GameObject obstaclePrefab;
+    [SerializeField]
     int obstaclePoolSize = 20;
     List<ObstacleController> obstaclePool = new List<ObstacleController>();
 
-    bool spawnObstacles = false;
+    bool spawningObstacles = false;
     float lastObstacleSpawnTime = 0f;
     float obstacleSpawnCooldownDuration = 0.25f;
     float obstacleAtSamePositionThreshold = 0.5f;
@@ -31,7 +32,7 @@ public class LevelController : MonoBehaviour
     float forwardDirectionThreshold = 0.05f;
     float directionalObstacleSpawnChance = 0.75f;
     int[] obstacleXAxisSpawnPositions = new int[13] { -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 };
-    int[] obstacleZAxisSpawnPositions = new int[6] { 6, 7, 8, 9, 10, 11 };
+    int[] obstacleZAxisSpawnPositions = new int[6] { 8, 9, 10, 11, 12, 13 };
 
     bool runningLevelIntro = false;
     float levelStartTime = 0f;
@@ -39,16 +40,35 @@ public class LevelController : MonoBehaviour
 
     [SerializeField]
     GameObject collectiblePrefab;
-    int collectiblePoolSize = 5;
+    [SerializeField]
+    int collectiblePoolSize = 3;
     List<CollectibleController> collectiblePool = new List<CollectibleController>();
 
     bool spawningCollectibles = false;
+    float firstCollectibleSpawnDelay = 10f;
     float collectibleSpawnCooldownDuration = 0f;
     float lastCollectibleSpawnTime = 0f;
     float collectibleSpawnCooldownMin = 10f;
     float collectibleSpawnCooldownMax = 10f;
     int[] collectibleXAxisSpawnPositions = new int[7] { -3, -2, -1, 0, 1, 2, 3 };
     int[] collectibleZAxisSpawnPositions = new int[4] { 10, 11, 12, 13 };
+
+    [SerializeField]
+    GameObject enemyPrefab;
+    [SerializeField]
+    int enemyPoolSize = 4;
+    List<EnemyController> enemyPool = new List<EnemyController>();
+    [SerializeField]
+    bool spawnEnemies = true;
+
+    bool spawningEnemies = false;
+    float firstEnemySpawnDelay = 10f;
+    float enemySpawnCooldown = 10f;
+    float enemySpawnCooldownMin = 10f;
+    float enemySpawnCooldownMax = 20f;
+    float lastEnemySpawnTime = 0f;
+    int[] enemyXAxisSpawnPositions = new int[4] { -5, -4, 4, 5 };
+    int enemyZAxisSpawnPosition = -3;
 
     //[SerializeField]
     //float environmentColorPhaseDuration = 50f;
@@ -86,21 +106,6 @@ public class LevelController : MonoBehaviour
 
     bool isPaused = false;
 
-    private void Start()
-    {
-        for (int i = 0; i < obstaclePoolSize; i++)
-        {
-            AddObstacleToPool();
-        }
-
-        for (int i = 0; i < collectiblePoolSize; i++)
-        {
-            AddCollectibleToPool();
-        }
-
-        StartLevel();
-    }
-
     private void OnEnable()
     {
         EventManager.OnLevelRestart += OnLevelRestart;
@@ -123,6 +128,12 @@ public class LevelController : MonoBehaviour
         EventManager.OnRequestCurrentEnvironmentColor -= OnRequestCurrentEnvironmentColor;
     }
 
+    #region Subscribers
+    private void OnLevelRestart()
+    {
+        RestartLevel();
+    }
+
     private void OnPauseStateChanged(bool newState)
     {
         isPaused = newState;
@@ -138,7 +149,7 @@ public class LevelController : MonoBehaviour
 
     private void OnPlayerMovement(Vector3 movementVector)
     {
-        CheckDirection(movementVector);
+        CheckPlayerMovementDirection(movementVector);
 
         if (countingScore)
         {
@@ -146,52 +157,65 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private void OnLevelRestart()
-    {
-        RestartLevel();
-    }
-    
     private void OnScoreMultiplierChange(int newScoreMultiplier, int multiplierTier)
     {
         currentEnvironmentColorIndex = multiplierTier;
         currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
         EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
-        
+
         currentScoreMultiplier = newScoreMultiplier;
+    }
+
+    private Color OnRequestCurrentEnvironmentColor()
+    {
+        return currentEnvironmentColor;
+    }
+    #endregion
+
+    #region Level initialization
+    private void Start()
+    {
+        InitializeSpawnablePools();
+        StartLevel();
+    }
+
+    private void InitializeSpawnablePools()
+    {
+        InitializeObstaclePool();
+        InitializeCollectiblePool();
+        InitializeEnemyPool();
     }
 
     private void StartLevel()
     {
-        levelStartTime = Time.time;
-        spawnObstacles = false;
+        spawningObstacles = false;
         spawningCollectibles = false;
-        runningLevelIntro = true;
+        spawningEnemies = false;
         countingScore = false;
         rawScore = 0;
         currentScore = 0;
         SetScoreText(currentScore.ToString());
 
-        EventManager.BroadcastLevelIntroStart();
         InitializeEnvironmentColors();
+
+        levelStartTime = Time.time;
+        runningLevelIntro = true;
+        EventManager.BroadcastLevelIntroStart();
     }
 
     private void RestartLevel()
     {
         ResetObstacles();
         ResetCollectibles();
+        ResetEnemies();
 
         InitializeScorePopUp();
 
         StartLevel();
     }
+    #endregion
 
-    public void SkipIntro()
-    {
-        Debug.Log("Skip intro");
-        ResetScorePopUp();
-        FinishLevelIntro();
-    }
-
+    #region Update loop
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -200,7 +224,6 @@ public class LevelController : MonoBehaviour
         }
         else if (!isPaused & runningLevelIntro && Input.anyKeyDown)
         {
-            Debug.Log("Skip intro button pressed");
             SkipIntro();
         }
 
@@ -216,7 +239,7 @@ public class LevelController : MonoBehaviour
                 ManageLevelIntro();
             }
 
-            if (spawnObstacles)
+            if (spawningObstacles)
             {
                 ManageObstacleSpawning();
             }
@@ -224,6 +247,11 @@ public class LevelController : MonoBehaviour
             if (spawningCollectibles)
             {
                 ManageCollectibleSpawning();
+            }
+
+            if (spawnEnemies && spawningEnemies)
+            {
+                ManageEnemySpawning();
             }
 
             if (displayingScorePopUp)
@@ -237,8 +265,10 @@ public class LevelController : MonoBehaviour
             }
         }
     }
+    #endregion
 
-    private void CheckDirection(Vector3 movementVector)
+    #region Player movement direction check
+    private void CheckPlayerMovementDirection(Vector3 movementVector)
     {
         int newPlayerMovementDirection = 0;
 
@@ -270,15 +300,17 @@ public class LevelController : MonoBehaviour
 
         playerMovementDirection = newPlayerMovementDirection;
     }
+    #endregion
 
+    #region Level intro
     private void ManageLevelIntro()
     {
-        float levelStartTimer = levelIntroDuration - (Time.time - levelStartTime);
+        //float levelStartTimer = levelIntroDuration - (Time.time - levelStartTime);
 
-        if (levelStartTimer <= 0)
-        {
-            levelStartTimer = 0;
-        }
+        //if (levelStartTimer <= 0)
+        //{
+        //    levelStartTimer = 0;
+        //}
         //Debug.Log("Level starting in: " + levelStartTimer);
 
         if (Time.time - levelStartTime >= levelIntroDuration)
@@ -289,15 +321,21 @@ public class LevelController : MonoBehaviour
 
     private void FinishLevelIntro()
     {
-        Debug.Log("LevelController: FinishLevelIntro");
-        runningLevelIntro = false;
-        spawnObstacles = true;
-        RandomizeCollectibleSpawnCooldownDuration();
-        lastCollectibleSpawnTime = Time.time;
+        spawningObstacles = true;
         spawningCollectibles = true;
-        EventManager.BroadcastLevelIntroFinished();
+        spawningEnemies = true;
         countingScore = true;
+
+        runningLevelIntro = false;
+        EventManager.BroadcastLevelIntroFinished();
     }
+
+    public void SkipIntro()
+    {
+        ResetScorePopUp();
+        FinishLevelIntro();
+    }
+    #endregion
 
     #region Score management
     private void ManageScore(Vector3 movementVector)
@@ -475,15 +513,191 @@ public class LevelController : MonoBehaviour
 
         return 0;
     }
+    #endregion
 
-    private Color OnRequestCurrentEnvironmentColor()
+    #region Obstacle spawning
+    private void ManageObstacleSpawning()
     {
-        return currentEnvironmentColor;
+        if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldownDuration)
+        {
+            SpawnObstacle();
+            lastObstacleSpawnTime = Time.time;
+        }
     }
 
-    private void ResetEnvironmentColor()
+    private bool ObstacleExistsInGivenPosition(Vector3 positionToCheck)
     {
+        foreach (ObstacleController oc in obstaclePool)
+        {
+            if (oc.gameObject.activeSelf)
+            {
+                Vector3 existingObstaclePos = oc.transform.position;
+                Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
 
+                if (Mathf.Abs((existingObstaclePos.x + currentGridOffset.x) - positionToCheck.x) <= obstacleAtSamePositionThreshold
+                && Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.z) <= obstacleAtSamePositionThreshold)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private ObstacleController GetAvailableObstacle()
+    {
+        for (int i = 0; i < obstaclePool.Count; i++)
+        {
+            if (!obstaclePool[i].gameObject.activeSelf)
+            {
+                return obstaclePool[i];
+            }
+        }
+
+        return AddObstacleToPool();
+    }
+
+    private ObstacleController AddObstacleToPool()
+    {
+        ObstacleController newObstacle = Instantiate(obstaclePrefab, transform).GetComponent<ObstacleController>();
+        newObstacle.Initialize();
+        obstaclePool.Add(newObstacle);
+
+        return newObstacle;
+    }
+
+    private void ResetObstacles()
+    {
+        foreach (ObstacleController oc in obstaclePool)
+        {
+            if (oc.gameObject.activeSelf)
+            {
+                oc.Despawn();
+            }
+        }
+    }
+
+    private void InitializeObstaclePool()
+    {
+        if (obstaclePool.Count > 0)
+        {
+            foreach (ObstacleController oc in obstaclePool)
+            {
+                oc.Despawn();
+                Destroy(oc.gameObject);
+            }
+
+            obstaclePool = new List<ObstacleController>();
+        }
+
+        for (int i = 0; i < obstaclePoolSize; i++)
+        {
+            AddObstacleToPool();
+        }
+    }
+
+    private void SpawnObstacle()
+    {
+        if (validDirection)
+        {
+            float spawnTypeResult = Random.Range(0f, 1f);
+
+            if (spawnTypeResult <= directionalObstacleSpawnChance)
+            {
+                SpawnDirectionalObstacle();
+
+                return;
+            }
+        }
+
+        SpawnRandomObstacle();
+    }
+
+    public bool TrySpawnObstacleAtPosition(Vector3 spawnPosition)
+    {
+        //Prevent multiple obstacles spawning at the same location
+        if (!ObstacleExistsInGivenPosition(spawnPosition))
+        {
+            GetAvailableObstacle().Spawn(spawnPosition);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void SpawnRandomObstacle()
+    {
+        Vector3 spawnPosition = Vector3.zero;
+        spawnPosition.x = obstacleXAxisSpawnPositions[Random.Range(0, obstacleXAxisSpawnPositions.Length)];
+        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
+            + (currentScoreMultiplier - 1);
+
+        if (!TrySpawnObstacleAtPosition(spawnPosition))
+        {
+            SpawnRandomObstacle();
+        }
+    }
+
+    private void SpawnDirectionalObstacle()
+    {
+        switch (playerMovementDirection)
+        {
+            case 0:
+                SpawnFrontObstacle();
+                break;
+            case -1:
+                SpawnLeftObstacle();
+                break;
+            case 1:
+                SpawnRightObstacle();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void SpawnFrontObstacle()
+    {
+        Vector3 spawnPosition = new Vector3(0f, 0f, 5f + (currentScoreMultiplier - 1));
+        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
+
+        if (ObstacleExistsInGivenPosition(spawnPosition))
+        {
+            SpawnRandomObstacle();
+        }
+        else
+        {
+            GetAvailableObstacle().Spawn(spawnPosition);
+        }
+    }
+
+    private void SpawnLeftObstacle()
+    {
+        Vector3 spawnPosition = new Vector3(-3f, 0f, 4f + (currentScoreMultiplier - 1));
+
+        if (ObstacleExistsInGivenPosition(spawnPosition))
+        {
+            SpawnRandomObstacle();
+        }
+        else
+        {
+            GetAvailableObstacle().Spawn(spawnPosition);
+        }
+    }
+
+    private void SpawnRightObstacle()
+    {
+        Vector3 spawnPosition = new Vector3(3f, 0f, 4f + (currentScoreMultiplier - 1));
+
+        if (ObstacleExistsInGivenPosition(spawnPosition))
+        {
+            SpawnRandomObstacle();
+        }
+        else
+        {
+            GetAvailableObstacle().Spawn(spawnPosition);
+        }
     }
     #endregion
 
@@ -559,166 +773,115 @@ public class LevelController : MonoBehaviour
                 cc.Despawn();
             }
         }
+
+        collectibleSpawnCooldownDuration = firstCollectibleSpawnDelay;
+        lastCollectibleSpawnTime = Time.time;
+    }
+
+    private void InitializeCollectiblePool()
+    {
+        if (collectiblePool.Count > 0)
+        {
+            foreach (CollectibleController cc in collectiblePool)
+            {
+                cc.Despawn();
+                Destroy(cc.gameObject);
+            }
+
+            collectiblePool = new List<CollectibleController>();
+        }
+
+        for (int i = 0; i < collectiblePoolSize; i++)
+        {
+            AddCollectibleToPool();
+        }
+
+        collectibleSpawnCooldownDuration = firstCollectibleSpawnDelay;
+        lastCollectibleSpawnTime = Time.time;
     }
     #endregion
 
-    #region Obstacle spawning
-    private void ManageObstacleSpawning()
+    #region Enemy spawning
+    private void ManageEnemySpawning()
     {
-        if (Time.time - lastObstacleSpawnTime >= obstacleSpawnCooldownDuration)
+        if (Time.time - lastEnemySpawnTime >= enemySpawnCooldown)
         {
-            SpawnObstacle();
-            lastObstacleSpawnTime = Time.time;
+            SpawnEnemy();
+            lastEnemySpawnTime = Time.time;
+            RandomizeEnemySpawnCooldown();
         }
     }
 
-    private bool ObstacleExistsInGivenPosition(Vector3 positionToCheck)
+    private void RandomizeEnemySpawnCooldown()
     {
-        foreach (ObstacleController oc in obstaclePool)
-        {
-            if (oc.gameObject.activeSelf)
-            {
-                Vector3 existingObstaclePos = oc.transform.position;
-                Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
-
-                if (Mathf.Abs((existingObstaclePos.x + currentGridOffset.x) - positionToCheck.x) <= obstacleAtSamePositionThreshold
-                && Mathf.Abs((existingObstaclePos.z + currentGridOffset.y) - positionToCheck.z) <= obstacleAtSamePositionThreshold)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        enemySpawnCooldown = Random.Range(enemySpawnCooldownMin, enemySpawnCooldownMax);
     }
 
-    private ObstacleController GetAvailableObstacle()
-    {
-        for (int i = 0; i < obstaclePool.Count; i++)
-        {
-            if (!obstaclePool[i].gameObject.activeSelf)
-            {
-                return obstaclePool[i];
-            }
-        }
-
-        return AddObstacleToPool();
-    }
-
-    private ObstacleController AddObstacleToPool()
-    {
-        ObstacleController newObstacle = Instantiate(obstaclePrefab, transform).GetComponent<ObstacleController>();
-        newObstacle.Initialize();
-        obstaclePool.Add(newObstacle);
-
-        return newObstacle;
-    }
-
-    private void ResetObstacles()
-    {
-        foreach (ObstacleController oc in obstaclePool)
-        {
-            if (oc.gameObject.activeSelf)
-            {
-                oc.Despawn();
-            }
-        }
-    }
-
-    private void SpawnObstacle()
-    {
-        if (validDirection)
-        {
-            float spawnTypeResult = Random.Range(0f, 1f);
-
-            if (spawnTypeResult <= directionalObstacleSpawnChance)
-            {
-                SpawnDirectionalObstacle();
-
-                return;
-            }
-        }
-
-        SpawnRandomObstacle();
-    }
-
-    private void SpawnRandomObstacle()
+    private void SpawnEnemy()
     {
         Vector3 spawnPosition = Vector3.zero;
-        spawnPosition.x = obstacleXAxisSpawnPositions[Random.Range(0, obstacleXAxisSpawnPositions.Length)];
-        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
-            + (currentScoreMultiplier - 1);
+        spawnPosition.x = enemyXAxisSpawnPositions[Random.Range(0, enemyXAxisSpawnPositions.Length)];
+        spawnPosition.z = enemyZAxisSpawnPosition;
 
-        //Prevent multiple obstacles spawning at the same location
-        if (ObstacleExistsInGivenPosition(spawnPosition))
-        {
-            SpawnRandomObstacle();
-        }
-        else
-        {
-            GetAvailableObstacle().Spawn(spawnPosition);
-        }
+        GetAvailableEnemy().Spawn(spawnPosition, this);
     }
 
-    private void SpawnDirectionalObstacle()
+    private EnemyController AddEnemyToPool()
     {
-        switch (playerMovementDirection)
-        {
-            case 0:
-                SpawnFrontObstacle();
-                break;
-            case -1:
-                SpawnLeftObstacle();
-                break;
-            case 1:
-                SpawnRightObstacle();
-                break;
-            default:
-                break;
-        }
+        EnemyController newEnemy = Instantiate(enemyPrefab, transform).GetComponent<EnemyController>();
+        newEnemy.Initialize();
+        enemyPool.Add(newEnemy);
+
+        return newEnemy;
     }
 
-    private void SpawnFrontObstacle()
+    private EnemyController GetAvailableEnemy()
     {
-        Vector3 spawnPosition = new Vector3(0f, 0f, 5f + (currentScoreMultiplier - 1));
-        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
+        for (int i = 0; i < enemyPool.Count; i++)
+        {
+            if (!enemyPool[i].gameObject.activeSelf)
+            {
+                return enemyPool[i];
+            }
+        }
 
-        if (ObstacleExistsInGivenPosition(spawnPosition))
-        {
-            SpawnRandomObstacle();
-        }
-        else
-        {
-            GetAvailableObstacle().Spawn(spawnPosition);
-        }
+        return AddEnemyToPool();
     }
 
-    private void SpawnLeftObstacle()
+    private void ResetEnemies()
     {
-        Vector3 spawnPosition = new Vector3(-3f, 0f, 4f + (currentScoreMultiplier - 1));
+        foreach (EnemyController ec in enemyPool)
+        {
+            if (ec.gameObject.activeSelf)
+            {
+                ec.Despawn();
+            }
+        }
 
-        if (ObstacleExistsInGivenPosition(spawnPosition))
-        {
-            SpawnRandomObstacle();
-        }
-        else
-        {
-            GetAvailableObstacle().Spawn(spawnPosition);
-        }
+        enemySpawnCooldown = firstEnemySpawnDelay;
+        lastEnemySpawnTime = Time.time;
     }
 
-    private void SpawnRightObstacle()
+    private void InitializeEnemyPool()
     {
-        Vector3 spawnPosition = new Vector3(3f, 0f, 4f + (currentScoreMultiplier - 1));
+        if (enemyPool.Count > 0)
+        {
+            foreach (EnemyController ec in enemyPool)
+            {
+                ec.Despawn();
+                Destroy(ec.gameObject);
+            }
 
-        if (ObstacleExistsInGivenPosition(spawnPosition))
-        {
-            SpawnRandomObstacle();
+            enemyPool = new List<EnemyController>();
         }
-        else
+
+        for (int i = 0; i < enemyPoolSize; i++)
         {
-            GetAvailableObstacle().Spawn(spawnPosition);
+            AddEnemyToPool();
         }
+
+        enemySpawnCooldown = firstEnemySpawnDelay;
+        lastEnemySpawnTime = Time.time;
     }
     #endregion
 }

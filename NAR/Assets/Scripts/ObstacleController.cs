@@ -10,10 +10,10 @@ public class ObstacleController : MonoBehaviour
 
     ObjectMovementController movementController;
     TriggerEventController triggerController;
-    Material gridMaterial;
+    Material obstacleMaterial;
     float originalAlpha1 = 0.0f;
     float originalAlpha2 = 0.0f;
-    
+
     float gridSpacing = 3;
 
     [SerializeField]
@@ -24,6 +24,8 @@ public class ObstacleController : MonoBehaviour
     float obstacleMeshEndPosY = 0f;
     float obstacleMeshAnimationRefVelocity;
     float obstacleMeshAnimationSmoothTime = 0.5f;
+    float spawnTime = 0f;
+    float spawnAnimationDelay = 0.5f;
 
     [SerializeField]
     float distanceFromCameraToSTartFade;
@@ -51,7 +53,10 @@ public class ObstacleController : MonoBehaviour
     {
         if (!isPaused)
         {
-            RunSpawnAnimation();
+            if (Time.time - spawnTime > spawnAnimationDelay)
+            {
+                RunSpawnAnimation();
+            }
         }
     }
 
@@ -60,11 +65,11 @@ public class ObstacleController : MonoBehaviour
         triggerController = GetComponentInChildren<TriggerEventController>(true);
         movementController = GetComponent<ObjectMovementController>();
 
-        gridMaterial = GetComponentInChildren<Renderer>().material;
-        originalAlpha1 = gridMaterial.GetColor("_GridColor").a;
-        originalAlpha2 = gridMaterial.GetColor("_OutsideColor").a;
+        obstacleMaterial = GetComponentInChildren<Renderer>().material;
+        originalAlpha1 = obstacleMaterial.GetColor("_GridColor").a;
+        originalAlpha2 = obstacleMaterial.GetColor("_OutsideColor").a;
 
-        gridSpacing = gridMaterial.GetFloat("_GridSpacing");
+        gridSpacing = obstacleMaterial.GetFloat("_GridSpacing");
 
         fadeZoneDistance = distanceFromCameraToSTartFade - distanceFromCameraToFinishFade;
         cameraTransform = Camera.main.transform;
@@ -91,6 +96,8 @@ public class ObstacleController : MonoBehaviour
 
         movementController.Activate();
 
+        spawnTime = Time.time;
+
         gameObject.SetActive(true);
     }
 
@@ -105,25 +112,25 @@ public class ObstacleController : MonoBehaviour
 
         gameObject.SetActive(false);
 
-        Color color = gridMaterial.GetColor("_GridColor");
+        Color color = obstacleMaterial.GetColor("_GridColor");
         color.a = originalAlpha1;
-        gridMaterial.SetColor("_GridColor", color);
+        obstacleMaterial.SetColor("_GridColor", color);
 
-        color = gridMaterial.GetColor("_OutsideColor");
+        color = obstacleMaterial.GetColor("_OutsideColor");
         color.a = originalAlpha2;
-        gridMaterial.SetColor("_OutsideColor", color);
+        obstacleMaterial.SetColor("_OutsideColor", color);
     }
 
     private void OnPlayerMovement(Vector3 playerMovementVector)
     {
-        if (playerMovementVector.z != 0)
-        {
-            ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.z);
-        }
-        if (playerMovementVector.x != 0)
-        {
-            ModifyGridOffset(EOffsetDirection.XOffset, playerMovementVector.x);
-        }
+        //if (playerMovementVector.z != 0)
+        //{
+        //    ModifyGridOffset(EOffsetDirection.ZOffset, playerMovementVector.z);
+        //}
+        //if (playerMovementVector.x != 0)
+        //{
+        //    ModifyGridOffset(EOffsetDirection.XOffset, playerMovementVector.x);
+        //}
 
 
         float distanceFromCamera = (cameraTransform.position - transform.position).magnitude;
@@ -131,14 +138,14 @@ public class ObstacleController : MonoBehaviour
         {
             float percentageFaded = 1 - ((distanceFromCamera - distanceFromCameraToFinishFade) / fadeZoneDistance);
             float newAlpha = Mathf.Lerp(originalAlpha1, 0, percentageFaded);
-            Color color = gridMaterial.GetColor("_GridColor");
+            Color color = obstacleMaterial.GetColor("_GridColor");
             color.a = newAlpha;
-            gridMaterial.SetColor("_GridColor", color);
+            obstacleMaterial.SetColor("_GridColor", color);
 
             newAlpha = Mathf.Lerp(originalAlpha2, 0, percentageFaded);
-            color = gridMaterial.GetColor("_OutsideColor");
+            color = obstacleMaterial.GetColor("_OutsideColor");
             color.a = newAlpha;
-            gridMaterial.SetColor("_OutsideColor", color);
+            obstacleMaterial.SetColor("_OutsideColor", color);
         }
 
         if (transform.position.z <= -10)
@@ -167,9 +174,13 @@ public class ObstacleController : MonoBehaviour
 
     private void SetColor(Color color)
     {
-        float oldAlpha = gridMaterial.GetColor("_GridColor").a;
+        float oldAlpha = obstacleMaterial.GetColor("_GridColor").a;
         color.a = oldAlpha;
-        gridMaterial.SetColor("_GridColor", color);
+        obstacleMaterial.SetColor("_GridColor", color);
+
+        oldAlpha = obstacleMaterial.GetColor("_OutsideColor").a;
+        color.a = oldAlpha;
+        obstacleMaterial.SetColor("_OutsideColor", color);
     }
 
     private void ModifyGridOffset(EOffsetDirection offsetToChange, float offsetValue, bool addToExistingOffset = true)
@@ -187,10 +198,10 @@ public class ObstacleController : MonoBehaviour
             default:
                 break;
         }
-        
+
         if (addToExistingOffset)
         {
-            float oldOffset = gridMaterial.GetFloat(offsetFloatName);
+            float oldOffset = obstacleMaterial.GetFloat(offsetFloatName);
             float newOffset = oldOffset + offsetValue;
             if (newOffset >= gridSpacing / 2)
             {
@@ -201,17 +212,17 @@ public class ObstacleController : MonoBehaviour
                 newOffset += gridSpacing;
             }
 
-            gridMaterial.SetFloat(offsetFloatName, newOffset);
+            obstacleMaterial.SetFloat(offsetFloatName, newOffset);
         }
         else
         {
-            gridMaterial.SetFloat(offsetFloatName, offsetValue);
+            obstacleMaterial.SetFloat(offsetFloatName, offsetValue);
         }
     }
 
     private void RunSpawnAnimation()
     {
-        float newPosition = Mathf.SmoothDamp(obstacleMesh.localPosition.y, obstacleMeshEndPosY, ref obstacleMeshAnimationRefVelocity, 
+        float newPosition = Mathf.SmoothDamp(obstacleMesh.localPosition.y, obstacleMeshEndPosY, ref obstacleMeshAnimationRefVelocity,
             obstacleMeshAnimationSmoothTime);
         obstacleMesh.localPosition = new Vector3(0, newPosition, 0);
     }

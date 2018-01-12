@@ -1,22 +1,27 @@
 TODO:
-- Enemies 
-	- (Shoot at player, if hit, player loses score. Destroyed when colliding with the player trail.)
-	- Enemies have proper charging indication
-	- After charging, enemies charge forward and leave a trail behind
-	- The trail damages player if collided with
 - Score = hp agains enemies
 - Color lerp: change hue instead of using Color.Lerp
 - Bloom glow with audio
 - Jump? (can jump over spawning obstacles)
-- Tie color change to speed?
 - Tie background music to speed (change to faster paced music at certain speed multipliers)?
 - If actually publishing, consider monetisation model?
 	- Unlockable skins
 	- Collectibles function as currency
+		- If collectibles change color with the environment, different color collectibles could function
+		  as separate currencies, forcing the player to gather at leas a few collectibles at the
+		  higher speeds (environment color is tied to speed) 
 	- Player can watch adds to earn extra currency (x2 currency for the next three games)
 	- Buying the full version halves the skin costs
 - Obstacle spawn rate follows audio bpm
-- Collectibles switch colors to complementary colors of the environment (from RGB colors)
+- Input button opacity decreases as the level proggresses (attach to score or scoreMultiplier value)
+	- This way the player is reminded of the button positions at the start of the level, but the buttons
+	  still get out of the way of visibility shortly after
+- Indicate score multiplier timer to the player somehow (horiozontal color change on the score field)
+- Indicate invulnerability to the player somehow (shield around the player)
+- Increase collectible despawner size with speed multiplier
+- Update enemy attack obstacle spawning in a coroutine (instead of update loop)
+- Fix enemy movement and player following
+- Fix player trail gaps
 
 
 DONE:
@@ -27,3 +32,12 @@ DONE:
 - Dash / barrelroll
 - Score multiplier = hp against obstacles
 - Update the trail with coroutines
+- Increase player y-position and modify obstacle colliders to move with the obstacle visuals
+- Tie color change to speed?
+- Collectibles switch colors to complementary colors of the environment (from RGB colors)
+- Enemies 
+	- (Shoot at player, if hit, player loses score. Destroyed when colliding with the player trail.)
+	- Enemies have proper charging indication
+	- After charging, enemies charge forward and leave a trail behind
+	- The trail damages player if collided with
+

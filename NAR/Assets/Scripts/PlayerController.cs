@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     bool controlsLocked = false;
     bool leftInputButtonHeld = false;
     bool rightInputButtonHeld = false;
+    int lastInputButtonPressed = 0;
     int input = 0;
     float currentXVelocity = 0f;
     float xAccelerationLag = 0.075f;
@@ -45,7 +46,7 @@ public class PlayerController : MonoBehaviour
 
     float scoreMultiplierUseInvulnerabilityDuration = 1f;
     float scoreMultiplierUseInvulnerabilityStartTime = 0f;
-    int[] scoreMultiplierTiers = new int[6] {1, 5, 10, 15, 20, 25 };
+    int[] scoreMultiplierTiers = new int[6] { 1, 5, 10, 15, 20, 25 };
 
     bool isPaused = false;
 
@@ -57,6 +58,7 @@ public class PlayerController : MonoBehaviour
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnCollectibleCollected += OnCollectibleCollected;
         EventManager.OnObstacleHit += OnObstacleHit;
+        EventManager.OnRequestCurrentScoreMultiplier += OnRequestCurrentScoreMultiplier;
     }
 
     private void OnDisable()
@@ -67,8 +69,10 @@ public class PlayerController : MonoBehaviour
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnCollectibleCollected -= OnCollectibleCollected;
         EventManager.OnObstacleHit -= OnObstacleHit;
+        EventManager.OnRequestCurrentScoreMultiplier -= OnRequestCurrentScoreMultiplier;
     }
 
+    #region Subscribers
     private void OnPauseStateChanged(bool newState)
     {
         isPaused = newState;
@@ -77,14 +81,6 @@ public class PlayerController : MonoBehaviour
     private void OnLevelRestart()
     {
         ResetSpeed();
-    }
-
-    private void ResetSpeed()
-    {
-        ResetDash();
-        currentXVelocity = 0f;
-        currentZVelocity = zSpeed;
-        ResetScoreMultiplier();
     }
 
     private void OnLevelIntroStart()
@@ -128,6 +124,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private int OnRequestCurrentScoreMultiplier()
+    {
+        return scoreMultiplier;
+    }
+    #endregion
+
+    #region Dash
     private void CheckForDashInput()
     {
         int newInputDirection = 0;
@@ -181,10 +184,11 @@ public class PlayerController : MonoBehaviour
 
     private void ResetDash()
     {
-
         isDashing = false;
     }
+    #endregion
 
+    #region Update loop
     private void Update()
     {
         if (!isPaused)
@@ -227,6 +231,16 @@ public class PlayerController : MonoBehaviour
             EventManager.BroadcastPlayerMovement(new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime);
         }
     }
+    #endregion
+
+    #region Score / speed multiplier management
+    private void ResetSpeed()
+    {
+        ResetDash();
+        currentXVelocity = 0f;
+        currentZVelocity = zSpeed;
+        ResetScoreMultiplier();
+    }
 
     private void ManageSpeedMultiplier()
     {
@@ -243,7 +257,7 @@ public class PlayerController : MonoBehaviour
     {
         for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
         {
-            if(scoreMultiplier < scoreMultiplierTiers[i + 1])
+            if (scoreMultiplier < scoreMultiplierTiers[i + 1])
             {
                 return i;
             }
@@ -263,8 +277,8 @@ public class PlayerController : MonoBehaviour
     private void DecreaseScoreMultiplier()
     {
         scoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(scoreMultiplier)] - 1;
-        
-        if(scoreMultiplier < 1)
+
+        if (scoreMultiplier < 1)
         {
             scoreMultiplier = 1;
         }
@@ -284,8 +298,9 @@ public class PlayerController : MonoBehaviour
         scoreMultiplier = 1;
         EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
     }
+    #endregion
 
-    int lastInputButtonPressed = 0;
+    #region Button input detection (mobile)
     public void XInputButtonPressed(int direction)
     {
         switch (direction)
@@ -323,4 +338,5 @@ public class PlayerController : MonoBehaviour
                 break;
         }
     }
+    #endregion
 }
