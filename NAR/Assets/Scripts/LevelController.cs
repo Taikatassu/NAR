@@ -94,7 +94,7 @@ public class LevelController : MonoBehaviour
     [SerializeField]
     Text scorePopUpText;
     Vector3 scorePopUpRefVelocity = Vector3.zero;
-    Vector3 scorePopUpPosition;
+    Vector3 scorePopUpTargetPosition;
     bool displayingScorePopUp = false;
     float scorePopUpSmoothTime = 0.5f;
     float scorePopUpDuration = 5f;
@@ -209,7 +209,7 @@ public class LevelController : MonoBehaviour
         ResetCollectibles();
         ResetEnemies();
 
-        InitializeScorePopUp();
+        StartScorePopUp();
 
         StartLevel();
     }
@@ -222,6 +222,10 @@ public class LevelController : MonoBehaviour
         {
             EventManager.BroadcastPauseStateChange(!isPaused);
         }
+        else if (Input.GetKeyDown(KeyCode.R))
+        {
+            EventManager.BroadcastLevelRestart();
+        }
         else if (!isPaused & runningLevelIntro && Input.anyKeyDown)
         {
             SkipIntro();
@@ -229,11 +233,6 @@ public class LevelController : MonoBehaviour
 
         if (!isPaused)
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                EventManager.BroadcastLevelRestart();
-            }
-
             if (runningLevelIntro)
             {
                 ManageLevelIntro();
@@ -352,7 +351,7 @@ public class LevelController : MonoBehaviour
         scoreValueText.text = newScoreText;
     }
 
-    private void InitializeScorePopUp()
+    private void StartScorePopUp()
     {
         ResetScorePopUp();
 
@@ -367,7 +366,7 @@ public class LevelController : MonoBehaviour
     private void ResetScorePopUp()
     {
         scorePopUpText.rectTransform.position = new Vector3(Screen.width / 2, Screen.height * 1.1f, 0);
-        scorePopUpPosition = new Vector3(Screen.width / 2, Screen.height * 0.75f, 0);
+        scorePopUpTargetPosition = new Vector3(Screen.width / 2, Screen.height * 0.75f, 0);
         SetScorePopUpText("");
         displayingScorePopUp = false;
 
@@ -389,7 +388,7 @@ public class LevelController : MonoBehaviour
     private void PlayFinalScorePopUpEffect()
     {
         scorePopUpText.rectTransform.position = Vector3.SmoothDamp(scorePopUpText.rectTransform.position,
-            scorePopUpPosition, ref scorePopUpRefVelocity, scorePopUpSmoothTime);
+            scorePopUpTargetPosition, ref scorePopUpRefVelocity, scorePopUpSmoothTime);
 
         float timeSinceStartedPopUp = Time.time - scorePopUpStartTime;
 

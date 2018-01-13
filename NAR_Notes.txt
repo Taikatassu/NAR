@@ -1,5 +1,4 @@
 TODO:
-- Score = hp agains enemies
 - Color lerp: change hue instead of using Color.Lerp
 - Bloom glow with audio
 - Jump? (can jump over spawning obstacles)
@@ -18,10 +17,11 @@ TODO:
 	  still get out of the way of visibility shortly after
 - Indicate score multiplier timer to the player somehow (horiozontal color change on the score field)
 - Indicate invulnerability to the player somehow (shield around the player)
-- Increase collectible despawner size with speed multiplier
+- Increase collectible despawner area size with speed multiplier
 - Update enemy attack obstacle spawning in a coroutine (instead of update loop)
-- Fix enemy movement and player following
 - Fix player trail gaps
+- Trail segment pooling
+- Display song name in the pause menu?
 
 
 DONE:
@@ -40,4 +40,6 @@ DONE:
 	- Enemies have proper charging indication
 	- After charging, enemies charge forward and leave a trail behind
 	- The trail damages player if collided with
+- Display song name at the intro?
+- Fix enemy movement and player following
 

@@ -8,6 +8,7 @@ public class EnemyController : MonoBehaviour
     ObjectMovementController movementController;
 
     float preferredXDistanceFromPlayer = 1.5f;
+    float preferredXDistanceErrorMargin = 0.25f;
 
     float xSpeed = 3.5f;
     float currentXVelocity = 0f;
@@ -92,16 +93,38 @@ public class EnemyController : MonoBehaviour
         if (!isAttacking)
         {
             int xDirection = 0;
-            if (transform.position.x > preferredXDistanceFromPlayer)
+            //if (transform.position.x > preferredXDistanceFromPlayer)
+            //{
+            //    xDirection = -1;
+            //}
+            //else if (transform.position.x < -preferredXDistanceFromPlayer)
+            //{
+            //    xDirection = 1;
+            //}
+
+
+
+            if(transform.position.x > preferredXDistanceFromPlayer + preferredXDistanceErrorMargin)
             {
                 xDirection = -1;
             }
-            else if (transform.position.x < -preferredXDistanceFromPlayer)
+            else if(transform.position.x < preferredXDistanceFromPlayer - preferredXDistanceErrorMargin && transform.position.x >= 0)
+            {
+                xDirection = 1;
+            }
+            else if (transform.position.x > -preferredXDistanceFromPlayer + preferredXDistanceErrorMargin && transform.position.x < 0)
+            {
+                xDirection = -1;
+            }
+            else if (transform.position.x < -preferredXDistanceFromPlayer - preferredXDistanceErrorMargin)
             {
                 xDirection = 1;
             }
 
-            float targetXVelocity = xSpeed * xDirection/* * ((scoreMultiplier - 1) * speedMultiplierPerScoreMultiplier + 1)*/;
+
+
+
+            float targetXVelocity = xSpeed * xDirection;
             currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refXVelocity, xAccelerationLag);
         }
 
@@ -113,13 +136,12 @@ public class EnemyController : MonoBehaviour
             zDirection = 0;
             if (transform.position.z < preferredZDistanceFromPlayer)
             {
-                //zSpeedCatchUpMultiplier = 1.5f;
                 zDirection = 1;
             }
-            //else if (transform.position.z > -0.15f)
-            //{
-            //    zDirection = -1;
-            //}
+            else if (transform.position.z > -0.15f)
+            {
+                zDirection = -1;
+            }
             else if (!isCharging)
             {
                 SetChargeEffectState(true);
@@ -128,8 +150,7 @@ public class EnemyController : MonoBehaviour
             }
         }
 
-        float targetZVelocity = zSpeed * zSpeedCatchUpMultiplier * zDirection * zAccelerationLagSpeedBump * attackZSpeedMultiplier 
-            * ((scoreMultiplier - 1) * speedMultiplierPerScoreMultiplier + 1);
+        float targetZVelocity = zSpeed * zSpeedCatchUpMultiplier * zDirection * zAccelerationLagSpeedBump * attackZSpeedMultiplier;
         currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
 
         transform.position += new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime;
@@ -148,13 +169,13 @@ public class EnemyController : MonoBehaviour
     {
         scoreMultiplier = newScoreMultiplier;
         //zAccelerationLag = zAccelerationLagSpeedBump;
-        //StartCoroutine(ResetZAccelerationLag(0.5f));
+        //StartCoroutine(ResetZAccelerationLag(0.5f, 0.15f));
     }
 
-    IEnumerator ResetZAccelerationLag(float waitTime)
+    IEnumerator ResetZAccelerationLag(float waitTime, float resetValue)
     {
         yield return new WaitForSeconds(waitTime);
-        zAccelerationLag = 0.15f;
+        zAccelerationLag = resetValue;
     }
 
     private void ManageCharging()
@@ -177,7 +198,7 @@ public class EnemyController : MonoBehaviour
 
     private void ManageAttack()
     {
-        Vector3 obstacleSpawnPosition = new Vector3(Mathf.RoundToInt(transform.position.x), 0, Mathf.FloorToInt(transform.position.z));
+        Vector3 obstacleSpawnPosition = new Vector3(Mathf.RoundToInt(transform.position.x), 0, Mathf.RoundToInt(transform.position.z));
         levelController.TrySpawnObstacleAtPosition(obstacleSpawnPosition);
 
         if (Time.time - attackStartTime > attackDuration)

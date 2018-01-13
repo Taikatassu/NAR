@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
+    // TODO: Relocate all UI related functionality to this script
+    //          - ScorePopUp
+    //          - AudioPopUp
+
     [SerializeField]
     GameObject buttonHolder;
     [SerializeField]

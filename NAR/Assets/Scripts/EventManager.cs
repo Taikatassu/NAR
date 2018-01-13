@@ -66,7 +66,6 @@ public static class EventManager
     public static event BoolVoid OnPauseStateChange;
     public static void BroadcastPauseStateChange(bool newState)
     {
-        Debug.Log("BroadcastPauseStateChange");
         if (OnPauseStateChange != null)
         {
             OnPauseStateChange(newState);
@@ -90,6 +89,7 @@ public static class EventManager
             return OnRequestCurrentEnvironmentColor();
         }
 
+        Debug.LogWarning("No subscriptions on 'OnRequestCurrentEnvironmentColor' event!");
         return new Color();
     }
 
@@ -128,6 +128,7 @@ public static class EventManager
             return OnRequestCurrentScoreMultiplier();
         }
 
+        Debug.LogWarning("No subscriptions on 'OnRequestCurrentScoreMultiplier' event!");
         return 1;
     }
 }

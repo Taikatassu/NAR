@@ -249,6 +249,7 @@ public class PlayerController : MonoBehaviour
             if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
             {
                 ResetScoreMultiplier();
+                EventManager.BroadcastLevelRestart();
             }
         }
     }
@@ -280,13 +281,8 @@ public class PlayerController : MonoBehaviour
 
         if (scoreMultiplier < 1)
         {
-            scoreMultiplier = 1;
-        }
-
-        if (scoreMultiplier == 1)
-        {
+            ResetScoreMultiplier();
             EventManager.BroadcastLevelRestart();
-            return;
         }
 
         scoreMultiplierUseInvulnerabilityStartTime = Time.time;
