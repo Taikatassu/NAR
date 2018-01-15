@@ -56,10 +56,12 @@ public class AudioManager : MonoBehaviour
         if (newState)
         {
             backgroundMusicSources[backgroundMusicIndex].Pause();
+            StartAudioPopUp();
         }
         else
         {
             backgroundMusicSources[backgroundMusicIndex].UnPause();
+            ResetAudioPopUp();
         }
     }
 
@@ -86,6 +88,7 @@ public class AudioManager : MonoBehaviour
 
         audioPopUpStartTime = Time.time;
         SetAudioPopUpText(backgroundMusicSources[backgroundMusicIndex].clip.name + "  ");
+        ColorHelper.SetTextColor(audioPopUpText, EventManager.BroadcastRequestCurrentEnvironmentColor(), true);
         displayingAudioPopUp = true;
     }
 
@@ -114,7 +117,7 @@ public class AudioManager : MonoBehaviour
     private void PlayAudioPopUp()
     {
         audioPopUpText.rectTransform.position = Vector3.SmoothDamp(audioPopUpText.rectTransform.position,
-            audioPopUpTargetPosition, ref audioPopUpRefVelocity, audioPopUpSmoothTime);
+            audioPopUpTargetPosition, ref audioPopUpRefVelocity, audioPopUpSmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
 
         float timeSinceStartedPopUp = Time.time - audioPopUpStartTime;
 
@@ -122,11 +125,11 @@ public class AudioManager : MonoBehaviour
         {
             Color audioPopUpFadeColor;
             audioPopUpFadeColor = audioPopUpText.color;
-            audioPopUpFadeColor.a -= audioPopUpFadeStrength * Time.deltaTime;
+            audioPopUpFadeColor.a -= audioPopUpFadeStrength * Time.unscaledDeltaTime;
             audioPopUpText.color = audioPopUpFadeColor;
 
             audioPopUpFadeColor = audioPopUpText.GetComponent<Shadow>().effectColor;
-            audioPopUpFadeColor.a -= audioPopUpFadeStrength * Time.deltaTime;
+            audioPopUpFadeColor.a -= audioPopUpFadeStrength * Time.unscaledDeltaTime;
             audioPopUpText.GetComponent<Shadow>().effectColor = audioPopUpFadeColor;
         }
 

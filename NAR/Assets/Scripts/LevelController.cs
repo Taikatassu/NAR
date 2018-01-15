@@ -86,10 +86,22 @@ public class LevelController : MonoBehaviour
 
     [SerializeField]
     Text scoreValueText;
-    bool countingScore = false;
-    float scorePerOneUnitTraveled = 1f;
-    float rawScore = 0f;
-    int currentScore = 0;
+    //bool countingScore = false;
+    //float scorePerOneUnitTraveled = 1f;
+    //float rawScore = 0f;
+    //int currentScore = 0;
+    [SerializeField]
+    Image scoreTimerSliderBackgroundImage;
+    [SerializeField]
+    Image scoreTimerSliderFillImage;
+
+    [SerializeField]
+    Slider scoreMultiplierTimerSlider;
+    float scoreMultiplierStartTime = 0f;
+    float scoreMultiplierDuration = 12f;
+    int[] scoreMultiplierTiers = new int[6] { 1, 5, 10, 15, 20, 25 };
+    int currentScoreMultiplier = 1;
+    int highestScoreMultiplier = 1;
 
     [SerializeField]
     Text scorePopUpText;
@@ -102,7 +114,9 @@ public class LevelController : MonoBehaviour
     float scorePopUpFadeStrength = 3f;
     float scorePopUpTextOriginalAlpha = 0f;
     float scorePopUpShadowOriginalAlpha = 0f;
-    int currentScoreMultiplier = 1;
+
+    int[] totalCollectedCollectibles;
+    int[] currentCollectedCollectibles;
 
     bool isPaused = false;
 
@@ -113,6 +127,9 @@ public class LevelController : MonoBehaviour
         EventManager.OnPlayerMovement += OnPlayerMovement;
         EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
         EventManager.OnRequestCurrentEnvironmentColor += OnRequestCurrentEnvironmentColor;
+        EventManager.OnRequestCurrentScoreMultiplier += OnRequestCurrentScoreMultiplier;
+        EventManager.OnCollectibleCollected += OnCollectibleCollected;
+        EventManager.OnPlayerDamaged += OnPlayerDamaged;
 
         SetScorePopUpText("");
         scorePopUpTextOriginalAlpha = scorePopUpText.color.a;
@@ -126,11 +143,29 @@ public class LevelController : MonoBehaviour
         EventManager.OnPlayerMovement -= OnPlayerMovement;
         EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
         EventManager.OnRequestCurrentEnvironmentColor -= OnRequestCurrentEnvironmentColor;
+        EventManager.OnRequestCurrentScoreMultiplier -= OnRequestCurrentScoreMultiplier;
+        EventManager.OnCollectibleCollected -= OnCollectibleCollected;
+        EventManager.OnPlayerDamaged -= OnPlayerDamaged;
     }
 
     #region Subscribers
     private void OnLevelRestart()
     {
+        Debug.Log("*** Collectibles Collected ***");
+
+        for (int i = 0; i < currentCollectedCollectibles.Length; i++)
+        {
+            Debug.Log("Tier " + (i + 1) + ": " + currentCollectedCollectibles[i] + " pcs");
+        }
+
+        Debug.Log(" *** ");
+
+
+        for (int i = 0; i < totalCollectedCollectibles.Length; i++)
+        {
+            totalCollectedCollectibles[i] += currentCollectedCollectibles[i];
+        }
+
         RestartLevel();
     }
 
@@ -150,17 +185,13 @@ public class LevelController : MonoBehaviour
     private void OnPlayerMovement(Vector3 movementVector)
     {
         CheckPlayerMovementDirection(movementVector);
-
-        if (countingScore)
-        {
-            ManageScore(movementVector);
-        }
     }
 
     private void OnScoreMultiplierChange(int newScoreMultiplier, int multiplierTier)
     {
         currentEnvironmentColorIndex = multiplierTier;
         currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
+        SetScoreTimerSliderColors(currentEnvironmentColor);
         EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
 
         currentScoreMultiplier = newScoreMultiplier;
@@ -170,11 +201,49 @@ public class LevelController : MonoBehaviour
     {
         return currentEnvironmentColor;
     }
+
+    private int OnRequestCurrentScoreMultiplier()
+    {
+        return currentScoreMultiplier;
+    }
+
+    private void OnCollectibleCollected(int collectibleTypeIndex)
+    {
+        CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
+
+        currentCollectedCollectibles[GetScoreMultiplierTierIndex(currentScoreMultiplier)]++;
+
+        switch (collectibleType)
+        {
+            case CollectibleController.ECollectibleType.ScoreMultiplier:
+                IncreaseScoreMultiplier();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnPlayerDamaged()
+    {
+        DecreaseScoreMultiplier();
+    }
     #endregion
 
     #region Level initialization
     private void Start()
     {
+        totalCollectedCollectibles = new int[scoreMultiplierTiers.Length];
+        for (int i = 0; i < totalCollectedCollectibles.Length; i++)
+        {
+            totalCollectedCollectibles[i] = 0;
+        }
+
+        currentCollectedCollectibles = new int[totalCollectedCollectibles.Length];
+        for (int i = 0; i < currentCollectedCollectibles.Length; i++)
+        {
+            currentCollectedCollectibles[i] = 0;
+        }
+
         InitializeSpawnablePools();
         StartLevel();
     }
@@ -191,12 +260,19 @@ public class LevelController : MonoBehaviour
         spawningObstacles = false;
         spawningCollectibles = false;
         spawningEnemies = false;
-        countingScore = false;
-        rawScore = 0;
-        currentScore = 0;
-        SetScoreText(currentScore.ToString());
+        //countingScore = false;
+        //rawScore = 0;
+        //currentScore = 0;
+        SetScoreText("SPEED: x" + currentScoreMultiplier.ToString());
 
         InitializeEnvironmentColors();
+        ResetScoreMultiplier();
+
+        currentCollectedCollectibles = new int[totalCollectedCollectibles.Length];
+        for (int i = 0; i < currentCollectedCollectibles.Length; i++)
+        {
+            currentCollectedCollectibles[i] = 0;
+        }
 
         levelStartTime = Time.time;
         runningLevelIntro = true;
@@ -258,10 +334,12 @@ public class LevelController : MonoBehaviour
                 PlayFinalScorePopUpEffect();
             }
 
-            if (useChanginEnvironmentColors)
-            {
-                ManageEnvironmentColorChanging();
-            }
+            //if (useChanginEnvironmentColors)
+            //{
+            //    ManageEnvironmentColorChanging();
+            //}
+
+            ManageScoreMultiplier();
         }
     }
     #endregion
@@ -323,7 +401,7 @@ public class LevelController : MonoBehaviour
         spawningObstacles = true;
         spawningCollectibles = true;
         spawningEnemies = true;
-        countingScore = true;
+        //countingScore = true;
 
         runningLevelIntro = false;
         EventManager.BroadcastLevelIntroFinished();
@@ -337,28 +415,112 @@ public class LevelController : MonoBehaviour
     #endregion
 
     #region Score management
-    private void ManageScore(Vector3 movementVector)
+    private void ManageScoreMultiplier()
     {
-        rawScore += scorePerOneUnitTraveled * currentScoreMultiplier * movementVector.z;
-        currentScore = Mathf.FloorToInt(rawScore);
+        if (currentScoreMultiplier > 1)
+        {
+            float scoreMultiplierTimer = Time.time - scoreMultiplierStartTime;
+            float scoreMultiplierTimerPercentage = scoreMultiplierTimer / scoreMultiplierDuration;
+            float scoreMultiplierTimeLeft = Mathf.Clamp01(1 - scoreMultiplierTimerPercentage);
 
-        string scoreText = (currentScoreMultiplier > 1) ? currentScore.ToString() + " x" + currentScoreMultiplier.ToString() : currentScore.ToString();
-        SetScoreText(scoreText);
+            scoreMultiplierTimerSlider.value = scoreMultiplierTimeLeft;
+
+            if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
+            {
+                EventManager.BroadcastLevelRestart();
+                ResetScoreMultiplier();
+            }
+
+            string scoreText = "SPEED: x" + currentScoreMultiplier.ToString();
+            SetScoreText(scoreText);
+
+            scoreValueText.gameObject.SetActive(true);
+        }
+        else
+        {
+            scoreValueText.gameObject.SetActive(false);
+        }
     }
+
+    private int GetScoreMultiplierTierIndex(int scoreMultiplier)
+    {
+        for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
+        {
+            if (scoreMultiplier < scoreMultiplierTiers[i + 1])
+            {
+                return i;
+            }
+        }
+
+        return scoreMultiplierTiers.Length - 1;
+    }
+
+    private void IncreaseScoreMultiplier()
+    {
+        scoreMultiplierStartTime = Time.time;
+        currentScoreMultiplier++;
+
+        if (currentScoreMultiplier > highestScoreMultiplier)
+        {
+            highestScoreMultiplier = currentScoreMultiplier;
+        }
+
+        EventManager.BroadcastScoreMultiplierChange(currentScoreMultiplier, GetScoreMultiplierTierIndex(currentScoreMultiplier));
+    }
+
+    private void DecreaseScoreMultiplier()
+    {
+        currentScoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(currentScoreMultiplier)] - 1;
+
+        if (currentScoreMultiplier < 1)
+        {
+            EventManager.BroadcastLevelRestart();
+            ResetScoreMultiplier();
+        }
+
+        EventManager.BroadcastScoreMultiplierChange(currentScoreMultiplier, GetScoreMultiplierTierIndex(currentScoreMultiplier));
+    }
+
+    private void ResetScoreMultiplier()
+    {
+        currentScoreMultiplier = 1;
+        highestScoreMultiplier = currentScoreMultiplier;
+        EventManager.BroadcastScoreMultiplierChange(currentScoreMultiplier, GetScoreMultiplierTierIndex(currentScoreMultiplier));
+    }
+
+    //private void ManageScore(Vector3 movementVector)
+    //{
+    //    string scoreText = "SPEED: x" + currentScoreMultiplier.ToString();
+    //    SetScoreText(scoreText);
+    //}
 
     private void SetScoreText(string newScoreText)
     {
         scoreValueText.text = newScoreText;
     }
 
+    private void SetScoreTimerSliderColors(Color environmentColor)
+    {
+        scoreTimerSliderBackgroundImage.color = environmentColor;
+        scoreTimerSliderFillImage.color = ColorHelper.FindComplementaryColor(environmentColor);
+    }
+
+    private void SetTextColors(Text textComponent, Color environmentColor)
+    {
+        scoreTimerSliderBackgroundImage.color = environmentColor;
+        scoreTimerSliderFillImage.color = ColorHelper.FindComplementaryColor(environmentColor);
+    }
+
+    #region Score PopUp management
     private void StartScorePopUp()
     {
         ResetScorePopUp();
 
-        if (currentScore > 0)
+        if (highestScoreMultiplier > 1)
         {
             scorePopUpStartTime = Time.time;
-            SetScorePopUpText(currentScore.ToString());
+            SetScorePopUpText("MAX SPEED: x" + highestScoreMultiplier.ToString());
+            ColorHelper.SetTextColor(scorePopUpText, currentEnvironmentColor, true);
             displayingScorePopUp = true;
         }
     }
@@ -410,6 +572,7 @@ public class LevelController : MonoBehaviour
         }
     }
     #endregion
+    #endregion
 
     #region Environment color management
     private void InitializeEnvironmentColors()
@@ -419,99 +582,101 @@ public class LevelController : MonoBehaviour
         //environmentColorPhaseStartTime = Time.time;
 
         currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
+        SetScoreTimerSliderColors(currentEnvironmentColor);
         EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
     }
 
-    private void ManageEnvironmentColorChanging()
-    {
-        if (chaningColors != 0)
-        {
-            ChangeColors(chaningColors);
-        }
-        //else if (Time.time - environmentColorPhaseStartTime > environmentColorPhaseDuration)
-        //{
-        //    StartChangingColors();
-        //}
-    }
+    //private void ManageEnvironmentColorChanging()
+    //{
+    //    if (chaningColors != 0)
+    //    {
+    //        ChangeColors(chaningColors);
+    //    }
+    //    //else if (Time.time - environmentColorPhaseStartTime > environmentColorPhaseDuration)
+    //    //{
+    //    //    StartChangingColors();
+    //    //}
+    //}
 
-    private void StartChangingColors(int direction)
-    {
-        //environmentColorChangeStartTime = Time.time;
-        chaningColors = direction;
-    }
+    //private void StartChangingColors(int direction)
+    //{
+    //    //environmentColorChangeStartTime = Time.time;
+    //    chaningColors = direction;
+    //}
 
-    private void ChangeColors(int direction)
-    {
-        chaningColors = 0;
-        //float timeSinceStarted = Time.time - environmentColorChangeStartTime;
-        //float percentageCompleted = timeSinceStarted / environmentColorChangeDuration;
+    //private void ChangeColors(int direction)
+    //{
+    //    chaningColors = 0;
+    //    //float timeSinceStarted = Time.time - environmentColorChangeStartTime;
+    //    //float percentageCompleted = timeSinceStarted / environmentColorChangeDuration;
 
-        if (direction == 1)
-        {
-            GoToNextEnvironmentColorIndex();
-
-
-
-            //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
-            //    environmentColors[GetNextEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
-
-            //if (percentageCompleted >= 1)
-            //{
-            //    chaningColors = 0;
-            //    GoToNextEnvironmentColorIndex();
-            //}
-        }
-        else if (direction == -1)
-        {
-            GoToPreviousEnvironmentColorIndex();
+    //    if (direction == 1)
+    //    {
+    //        GoToNextEnvironmentColorIndex();
 
 
 
-            //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
-            //    environmentColors[GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
+    //        //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
+    //        //    environmentColors[GetNextEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
 
-            //if (percentageCompleted >= 1)
-            //{
-            //    chaningColors = 0;
-            //    GoToPreviousEnvironmentColorIndex();
-            //}
-        }
+    //        //if (percentageCompleted >= 1)
+    //        //{
+    //        //    chaningColors = 0;
+    //        //    GoToNextEnvironmentColorIndex();
+    //        //}
+    //    }
+    //    else if (direction == -1)
+    //    {
+    //        GoToPreviousEnvironmentColorIndex();
 
-        currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
-        EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
-    }
 
-    private void GoToNextEnvironmentColorIndex()
-    {
-        currentEnvironmentColorIndex = GetNextEnvironmentColorIndex(currentEnvironmentColorIndex);
-        //environmentColorPhaseStartTime = Time.time;
-    }
 
-    private void GoToPreviousEnvironmentColorIndex()
-    {
-        currentEnvironmentColorIndex = GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex);
-        //environmentColorPhaseStartTime = Time.time;
-    }
+    //        //currentEnvironmentColor = Color.Lerp(environmentColors[currentEnvironmentColorIndex],
+    //        //    environmentColors[GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex)], percentageCompleted);
 
-    private int GetNextEnvironmentColorIndex(int currentIndex)
-    {
-        if (currentIndex + 1 < environmentColors.Length)
-        {
-            return currentIndex + 1;
-        }
+    //        //if (percentageCompleted >= 1)
+    //        //{
+    //        //    chaningColors = 0;
+    //        //    GoToPreviousEnvironmentColorIndex();
+    //        //}
+    //    }
 
-        return 0;
-    }
+    //    currentEnvironmentColor = environmentColors[currentEnvironmentColorIndex];
+    //    SetScoreTimerSliderColors(currentEnvironmentColor);
+    //    EventManager.BroadcastEnvironmentColorChange(currentEnvironmentColor);
+    //}
 
-    private int GetPreviousEnvironmentColorIndex(int currentIndex)
-    {
-        if (currentIndex - 1 >= 0)
-        {
-            return currentIndex - 1;
-        }
+    //private void GoToNextEnvironmentColorIndex()
+    //{
+    //    currentEnvironmentColorIndex = GetNextEnvironmentColorIndex(currentEnvironmentColorIndex);
+    //    //environmentColorPhaseStartTime = Time.time;
+    //}
 
-        return 0;
-    }
+    //private void GoToPreviousEnvironmentColorIndex()
+    //{
+    //    currentEnvironmentColorIndex = GetPreviousEnvironmentColorIndex(currentEnvironmentColorIndex);
+    //    //environmentColorPhaseStartTime = Time.time;
+    //}
+
+    //private int GetNextEnvironmentColorIndex(int currentIndex)
+    //{
+    //    if (currentIndex + 1 < environmentColors.Length)
+    //    {
+    //        return currentIndex + 1;
+    //    }
+
+    //    return 0;
+    //}
+
+    //private int GetPreviousEnvironmentColorIndex(int currentIndex)
+    //{
+    //    if (currentIndex - 1 >= 0)
+    //    {
+    //        return currentIndex - 1;
+    //    }
+
+    //    return 0;
+    //}
     #endregion
 
     #region Obstacle spawning

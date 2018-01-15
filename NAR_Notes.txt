@@ -1,8 +1,4 @@
 TODO:
-- Color lerp: change hue instead of using Color.Lerp
-- Bloom glow with audio
-- Jump? (can jump over spawning obstacles)
-- Tie background music to speed (change to faster paced music at certain speed multipliers)?
 - If actually publishing, consider monetisation model?
 	- Unlockable skins
 	- Collectibles function as currency
@@ -11,17 +7,54 @@ TODO:
 		  higher speeds (environment color is tied to speed) 
 	- Player can watch adds to earn extra currency (x2 currency for the next three games)
 	- Buying the full version halves the skin costs
+- Proper effects on all actions
+	- Collecting collectable
+	- Activating shield
+	- Dashing
+	- Hitting an obstacle
+	- Obstacle getting destroyed (by the player shield / collectable spawn)
+	- Player death
+	- Enemy spawning
+	- Enemy starting charge
+	- Enemy ending charge / starting attack
+	- Enemy ending attack
+	- Enemy getting destroyed (by the player trail)
+- Proper menu textures
+- Proper player ship model
+- Implement main menu
+	- Play (goal reached at the end of the song)
+	- Endless mode (the music loops, continues endlessly)
+	- Customization (Can buy and select skins for the player ship. Bought with ingame currency)
+	- Options (PC: Volume, Resolution) 
+	- (Credits)
+	- Quit (Exits the application)
+	- Background scene with the ship speeding through the game environment
+- Change color on all text and menus according to environment
+- Implement goal reaching
+- Jump? (can jump over spawning obstacles)
+- Tie background music to speed (change to faster paced music at certain speed multipliers)?
 - Obstacle spawn rate follows audio bpm
+- Alternate collectibles
+	- Timed invulnerability with flashing environment colors
+	- Mirrored world
+- Obstacle color lerp from white to environment color while running spawn animation
+- Increase player movement speed by increasing timescale, instead of various variables in script?
+	- This would ensure similar obstacle spawning even at higher speeds
+	- Possible problems
+	- Too difficult?
+- Proper trail implementation
+	- Fix player trail gaps
+	- Trail segment pooling
+	- Reconsider creating trail mesh in script and modifying mesh vertex position to fake movement
+- Playtest and tweak enemies
+	- Should they be destroyable at all?
+	- Currently just an annoyance
+	- Does the feature bring any new value to the gameplay
+- Add speed multiplier tiers to 50-60
+- Bloom glow with audio
 - Input button opacity decreases as the level proggresses (attach to score or scoreMultiplier value)
 	- This way the player is reminded of the button positions at the start of the level, but the buttons
 	  still get out of the way of visibility shortly after
-- Indicate score multiplier timer to the player somehow (horiozontal color change on the score field)
-- Indicate invulnerability to the player somehow (shield around the player)
-- Increase collectible despawner area size with speed multiplier
-- Update enemy attack obstacle spawning in a coroutine (instead of update loop)
-- Fix player trail gaps
-- Trail segment pooling
-- Display song name in the pause menu?
 
 
 DONE:
@@ -42,4 +75,19 @@ DONE:
 	- The trail damages player if collided with
 - Display song name at the intro?
 - Fix enemy movement and player following
+- Indicate score multiplier timer to the player somehow (horiozontal color change on the score field)
+- Increase collectible despawner area size with speed multiplier
+- Collectible marker does not disappear when the collectible is collected
+- Indicate invulnerability to the player somehow (shield around the player)
+- Redesign score system (don't count core, display only speed multiplier and the amount of collected 
+	collectables)
+- Change score text fill / background color with the environment colors
+- Test alternate grid implementations to fix the grid line visual jittering 
+	- Standard shader with texture tested (is worse)
+- Display song name in the pause menu?
+- Fix the gaps in enemy attack obstacle spawn line
+
+
+
+
 

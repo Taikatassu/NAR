@@ -19,6 +19,11 @@ public class CollectibleController : MonoBehaviour
     [SerializeField]
     Transform effectsHolder;
     Material collectibleEffectMaterial;
+    [SerializeField]
+    SphereCollider despawnAreaCollider;
+    float despawnAreaColliderOriginalRadius = 0f;
+
+    bool isCollected = false;
 
     public enum ECollectibleType
     {
@@ -27,7 +32,7 @@ public class CollectibleController : MonoBehaviour
 
     private void OnDisable()
     {
-        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
+        //EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
     }
 
@@ -36,6 +41,7 @@ public class CollectibleController : MonoBehaviour
         movementController = GetComponent<ObjectMovementController>();
         collectibleMeshMaterial = meshHolder.GetComponentInChildren<Renderer>().material;
         collectibleEffectMaterial = effectsHolder.GetComponentInChildren<Renderer>().material;
+        despawnAreaColliderOriginalRadius = despawnAreaCollider.radius;
 
         Despawn();
     }
@@ -47,22 +53,37 @@ public class CollectibleController : MonoBehaviour
         transform.position = spawnPosition;
 
         SetColor(EventManager.BroadcastRequestCurrentEnvironmentColor());
-        EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
+        //EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
+        
+        despawnAreaCollider.radius = despawnAreaColliderOriginalRadius + EventManager.BroadcastRequestCurrentScoreMultiplier() * 0.2f;
 
         movementController.Activate();
+
+        isCollected = false;
+        meshHolder.gameObject.SetActive(true);
 
         gameObject.SetActive(true);
     }
 
     public void Despawn()
     {
-        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
+        //EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
+
+        despawnAreaCollider.radius = despawnAreaColliderOriginalRadius;
 
         movementController.Deactivate();
 
         gameObject.SetActive(false);
+    }
+
+    private void Collect()
+    {
+        isCollected = true;
+        meshHolder.gameObject.SetActive(false);
+
+        EventManager.BroadcastCollectibleCollected((int)collectibleType);
     }
 
     private void Update()
@@ -74,14 +95,14 @@ public class CollectibleController : MonoBehaviour
     }
 
     #region Color management
-    private void OnEnvironmentColorChange(Color color)
-    {
-        SetColor(color);
-    }
+    //private void OnEnvironmentColorChange(Color color)
+    //{
+    //    SetColor(color);
+    //}
 
     private void SetColor(Color color)
     {
-        color = FindComplementaryColor(color);
+        color = ColorHelper.FindComplementaryColor(color);
 
         float oldAlpha = collectibleMeshMaterial.GetColor("_TintColor").a;
         color.a = oldAlpha;
@@ -91,28 +112,13 @@ public class CollectibleController : MonoBehaviour
         color.a = oldAlpha;
         collectibleEffectMaterial.SetColor("_TintColor", color);
     }
-
-    private Color FindComplementaryColor(Color startColor)
-    {
-        float h = 0;
-        float s = 0;
-        float v = 0;
-        Color.RGBToHSV(startColor, out h, out s, out v);
-        h = (h + 0.5f) % 1;
-
-        Color complementaryColor = Color.HSVToRGB(h, s, v);
-
-        return complementaryColor;
-    }
     #endregion
 
     private void OnTriggerEnterEvent(Collider col)
     {
-        if (col.CompareTag("Player"))
+        if (!isCollected && col.CompareTag("Player"))
         {
-            EventManager.BroadcastCollectibleCollected((int)collectibleType);
-
-            Despawn();
+            Collect();
         }
     }
 }

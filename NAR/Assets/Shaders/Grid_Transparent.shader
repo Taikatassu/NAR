@@ -9,6 +9,7 @@ Shader "Custom/Grid_Transparent" {
 		_GridSpacing("Grid Spacing", Float) = 10.0
 		_GridColor("Grid Color", Color) = (0.5, 0.5, 1.0, 1.0)
 		_OutsideColor("Color Outside Grid", Color) = (0.0, 0.0, 0.0, 0.0)
+		_BlendColor("Blending Color Grid", Color) = (0.0, 0.0, 0.0, 0.0)
 		_FadeDistance("Distance To Fade Out The Grid", float) = 25.0
 		_PosXInitialOffset("X Position Initial Offset", float) = 0.0
 		_PosZInitialOffset("Z Position Initial Offset", float) = 0.0
@@ -33,6 +34,7 @@ CGPROGRAM
 	uniform float _GridSpacing;
 	uniform float4 _GridColor;
 	uniform float4 _OutsideColor;
+	uniform float4 _BlendColor;
 	uniform float _FadeDistance;
 	uniform float _PosXInitialOffset;
 	uniform float _PosZInitialOffset;
@@ -67,13 +69,13 @@ CGPROGRAM
 
 			float4 grid = _GridColor;
 			grid.a = grid.a * (1 - (dist / _FadeDistance));
-
+			grid = grid * _BlendColor;
 			return grid;
 		}
 		else {
 			float4 outside = _OutsideColor;
 			outside.a = outside.a * (1 - (dist / _FadeDistance));
-
+			outside = outside * _BlendColor;
 			return outside;
 		}
 	}

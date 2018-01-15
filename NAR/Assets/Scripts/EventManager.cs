@@ -102,12 +102,21 @@ public static class EventManager
         }
     }
 
-    public static event GameObjectVoid OnObstacleHit;
-    public static void BroadcastObstacleHit(GameObject hitObstacle)
+    //public static event GameObjectVoid OnObstacleHit;
+    //public static void BroadcastObstacleHit(GameObject hitObstacle)
+    //{
+    //    if (OnObstacleHit != null)
+    //    {
+    //        OnObstacleHit(hitObstacle);
+    //    }
+    //}
+
+    public static event EmptyVoid OnPlayerDamaged;
+    public static void BroadcastPlayerDamaged()
     {
-        if (OnObstacleHit != null)
+        if(OnPlayerDamaged != null)
         {
-            OnObstacleHit(hitObstacle);
+            OnPlayerDamaged();
         }
     }
 

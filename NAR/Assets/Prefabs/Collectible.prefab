@@ -389,6 +389,7 @@ MonoBehaviour:
   collectibleType: 0
   meshHolder: {fileID: 4569610937047734}
   effectsHolder: {fileID: 4890771299267732}
+  despawnAreaCollider: {fileID: 135883143145255846}
 --- !u!114 &114838567867999474
 MonoBehaviour:
   m_ObjectHideFlags: 1

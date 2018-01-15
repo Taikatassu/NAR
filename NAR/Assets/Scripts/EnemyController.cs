@@ -200,6 +200,10 @@ public class EnemyController : MonoBehaviour
     {
         Vector3 obstacleSpawnPosition = new Vector3(Mathf.RoundToInt(transform.position.x), 0, Mathf.RoundToInt(transform.position.z));
         levelController.TrySpawnObstacleAtPosition(obstacleSpawnPosition);
+        obstacleSpawnPosition = new Vector3(Mathf.RoundToInt(transform.position.x), 0, Mathf.RoundToInt(transform.position.z) + 1);
+        levelController.TrySpawnObstacleAtPosition(obstacleSpawnPosition);
+        obstacleSpawnPosition = new Vector3(Mathf.RoundToInt(transform.position.x), 0, Mathf.RoundToInt(transform.position.z) - 1);
+        levelController.TrySpawnObstacleAtPosition(obstacleSpawnPosition);
 
         if (Time.time - attackStartTime > attackDuration)
         {

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -14,9 +15,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     float xSpeed = 3f;
 
+    //[SerializeField]
+    //Slider scoreMultiplierTimerSlider;
     int scoreMultiplier = 1;
-    float scoreMultiplierStartTime = 0f;
-    float scoreMultiplierDuration = 12f;
+    //float scoreMultiplierStartTime = 0f;
+    //float scoreMultiplierDuration = 12f;
     float speedMultiplierPerScoreMultiplier = 0.25f;
 
     bool controlsLocked = false;
@@ -46,7 +49,10 @@ public class PlayerController : MonoBehaviour
 
     float scoreMultiplierUseInvulnerabilityDuration = 1f;
     float scoreMultiplierUseInvulnerabilityStartTime = 0f;
-    int[] scoreMultiplierTiers = new int[6] { 1, 5, 10, 15, 20, 25 };
+    //int[] scoreMultiplierTiers = new int[6] { 1, 5, 10, 15, 20, 25 };
+
+    [SerializeField]
+    GameObject invulnerabilityShield;
 
     bool isPaused = false;
 
@@ -56,9 +62,10 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
-        EventManager.OnCollectibleCollected += OnCollectibleCollected;
-        EventManager.OnObstacleHit += OnObstacleHit;
-        EventManager.OnRequestCurrentScoreMultiplier += OnRequestCurrentScoreMultiplier;
+        //EventManager.OnCollectibleCollected += OnCollectibleCollected;
+        //EventManager.OnObstacleHit += OnObstacleHit;
+        //EventManager.OnRequestCurrentScoreMultiplier += OnRequestCurrentScoreMultiplier;
+        EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
     }
 
     private void OnDisable()
@@ -67,9 +74,10 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
         EventManager.OnLevelRestart -= OnLevelRestart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
-        EventManager.OnCollectibleCollected -= OnCollectibleCollected;
-        EventManager.OnObstacleHit -= OnObstacleHit;
-        EventManager.OnRequestCurrentScoreMultiplier -= OnRequestCurrentScoreMultiplier;
+        //EventManager.OnCollectibleCollected -= OnCollectibleCollected;
+        //EventManager.OnObstacleHit -= OnObstacleHit;
+        //EventManager.OnRequestCurrentScoreMultiplier -= OnRequestCurrentScoreMultiplier;
+        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
     }
 
     #region Subscribers
@@ -89,6 +97,8 @@ public class PlayerController : MonoBehaviour
         leftInputButtonHeld = false;
         rightInputButtonHeld = false;
         ResetSpeed();
+
+        invulnerabilityShield.SetActive(false);
     }
 
     private void OnLevelIntroFinished()
@@ -96,27 +106,29 @@ public class PlayerController : MonoBehaviour
         controlsLocked = false;
     }
 
-    private void OnCollectibleCollected(int collectibleTypeIndex)
-    {
-        CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
+    //private void OnCollectibleCollected(int collectibleTypeIndex)
+    //{
+    //    CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
 
-        switch (collectibleType)
-        {
-            case CollectibleController.ECollectibleType.ScoreMultiplier:
-                IncreaseScoreMultiplier();
-                break;
-            default:
-                break;
-        }
-    }
+    //    switch (collectibleType)
+    //    {
+    //        case CollectibleController.ECollectibleType.ScoreMultiplier:
+    //            IncreaseScoreMultiplier();
+    //            break;
+    //        default:
+    //            break;
+    //    }
+    //}
 
-    private void OnObstacleHit(GameObject hitObstacle)
+    public void OnObstacleHit(GameObject hitObstacle)
     {
         // Check if invulnerable saves are not available
-        if (Time.time - dashStartTime > dashInvulnerabilityDuration
-            && Time.time - scoreMultiplierUseInvulnerabilityStartTime > scoreMultiplierUseInvulnerabilityDuration)
+        if (!invulnerabilityShield.activeSelf)
         {
-            DecreaseScoreMultiplier();
+            //DecreaseScoreMultiplier();
+            EventManager.BroadcastPlayerDamaged();
+            scoreMultiplierUseInvulnerabilityStartTime = Time.time;
+            invulnerabilityShield.SetActive(true);
         }
         else
         {
@@ -124,9 +136,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private int OnRequestCurrentScoreMultiplier()
+    //private int OnRequestCurrentScoreMultiplier()
+    //{
+    //    return scoreMultiplier;
+    //}
+
+    private void OnScoreMultiplierChange(int newScoreMultiplier, int newScoreMultiplierTier)
     {
-        return scoreMultiplier;
+        scoreMultiplier = newScoreMultiplier;
     }
     #endregion
 
@@ -169,6 +186,7 @@ public class PlayerController : MonoBehaviour
         dashStartTime = Time.time;
         isDashing = true;
         dashDirection = newDashDirection;
+        invulnerabilityShield.SetActive(true);
     }
 
     private void Dash()
@@ -193,7 +211,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!isPaused)
         {
-            ManageSpeedMultiplier();
+            //ManageSpeedMultiplier();
 
             if (isDashing)
             {
@@ -229,6 +247,22 @@ public class PlayerController : MonoBehaviour
             currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
 
             EventManager.BroadcastPlayerMovement(new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime);
+
+            if (invulnerabilityShield.activeSelf)
+            {
+                ManageInvulnerabilityShield();
+            }
+        }
+    }
+    #endregion
+
+    #region Invulnerability management
+    private void ManageInvulnerabilityShield()
+    {
+        if (Time.time - dashStartTime > dashInvulnerabilityDuration
+               && Time.time - scoreMultiplierUseInvulnerabilityStartTime > scoreMultiplierUseInvulnerabilityDuration)
+        {
+            invulnerabilityShield.SetActive(false);
         }
     }
     #endregion
@@ -239,61 +273,68 @@ public class PlayerController : MonoBehaviour
         ResetDash();
         currentXVelocity = 0f;
         currentZVelocity = zSpeed;
-        ResetScoreMultiplier();
+        scoreMultiplier = EventManager.BroadcastRequestCurrentScoreMultiplier();
+        //ResetScoreMultiplier();
     }
 
-    private void ManageSpeedMultiplier()
-    {
-        if (scoreMultiplier > 1)
-        {
-            if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
-            {
-                ResetScoreMultiplier();
-                EventManager.BroadcastLevelRestart();
-            }
-        }
-    }
+    //private void ManageSpeedMultiplier()
+    //{
+    //    if (scoreMultiplier > 1)
+    //    {
+    //        float scoreMultiplierTimer = Time.time - scoreMultiplierStartTime;
+    //        float scoreMultiplierTimerPercentage = scoreMultiplierTimer / scoreMultiplierDuration;
+    //        float scoreMultiplierTimeLeft = Mathf.Clamp01(1 - scoreMultiplierTimerPercentage);
 
-    private int GetScoreMultiplierTierIndex(int scoreMultiplier)
-    {
-        for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
-        {
-            if (scoreMultiplier < scoreMultiplierTiers[i + 1])
-            {
-                return i;
-            }
-        }
+    //        scoreMultiplierTimerSlider.value = scoreMultiplierTimeLeft;
 
-        return scoreMultiplierTiers.Length - 1;
-    }
+    //        if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
+    //        {
+    //            ResetScoreMultiplier();
+    //            EventManager.BroadcastLevelRestart();
+    //        }
+    //    }
+    //}
 
-    private void IncreaseScoreMultiplier()
-    {
-        scoreMultiplierStartTime = Time.time;
-        scoreMultiplier++;
+    //private int GetScoreMultiplierTierIndex(int scoreMultiplier)
+    //{
+    //    for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
+    //    {
+    //        if (scoreMultiplier < scoreMultiplierTiers[i + 1])
+    //        {
+    //            return i;
+    //        }
+    //    }
 
-        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    }
+    //    return scoreMultiplierTiers.Length - 1;
+    //}
 
-    private void DecreaseScoreMultiplier()
-    {
-        scoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(scoreMultiplier)] - 1;
+    //private void IncreaseScoreMultiplier()
+    //{
+    //    scoreMultiplierStartTime = Time.time;
+    //    scoreMultiplier++;
 
-        if (scoreMultiplier < 1)
-        {
-            ResetScoreMultiplier();
-            EventManager.BroadcastLevelRestart();
-        }
+    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
+    //}
 
-        scoreMultiplierUseInvulnerabilityStartTime = Time.time;
-        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    }
+    //private void DecreaseScoreMultiplier()
+    //{
+    //    scoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(scoreMultiplier)] - 1;
 
-    private void ResetScoreMultiplier()
-    {
-        scoreMultiplier = 1;
-        EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    }
+    //    if (scoreMultiplier < 1)
+    //    {
+    //        ResetScoreMultiplier();
+    //        EventManager.BroadcastLevelRestart();
+    //    }
+
+    //    scoreMultiplierUseInvulnerabilityStartTime = Time.time;
+    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
+    //}
+
+    //private void ResetScoreMultiplier()
+    //{
+    //    scoreMultiplier = 1;
+    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
+    //}
     #endregion
 
     #region Button input detection (mobile)

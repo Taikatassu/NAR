@@ -163,7 +163,8 @@ public class ObstacleController : MonoBehaviour
     {
         if (col.CompareTag("Player"))
         {
-            EventManager.BroadcastObstacleHit(gameObject);
+            col.GetComponent<PlayerController>().OnObstacleHit(gameObject);
+            //EventManager.BroadcastObstacleHit(gameObject);
         }
     }
 
