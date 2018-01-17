@@ -14,6 +14,7 @@ public static class EventManager
     public delegate void IntIntVoid(int integer1, int integer2);
     public delegate void GameObjectVoid(GameObject gameObject);
     public delegate int EmptyInt();
+    public delegate void OutFloatOutFloatVoid(out float floatingPoint1, out float floatingPoint2);
 
     public static event Vector3Void OnPlayerMovement;
     public static void BroadcastPlayerMovement(Vector3 playerMovement)
@@ -114,7 +115,7 @@ public static class EventManager
     public static event EmptyVoid OnPlayerDamaged;
     public static void BroadcastPlayerDamaged()
     {
-        if(OnPlayerDamaged != null)
+        if (OnPlayerDamaged != null)
         {
             OnPlayerDamaged();
         }
@@ -139,5 +140,26 @@ public static class EventManager
 
         Debug.LogWarning("No subscriptions on 'OnRequestCurrentScoreMultiplier' event!");
         return 1;
+    }
+
+    public static event OutFloatOutFloatVoid OnRequestCurrentAudioTimeInfo;
+    public static void BroadcastRequestCurrentAudioTimeInfo(out float trackDuration, out float currentTrackTime)
+    {
+        trackDuration = -1f;
+        currentTrackTime = -1f;
+
+        if (OnRequestCurrentAudioTimeInfo != null)
+        {
+            OnRequestCurrentAudioTimeInfo(out trackDuration, out currentTrackTime);
+        }
+    }
+
+    public static event EmptyVoid OnLevelFinished;
+    public static void BroadcastLevelFinished()
+    {
+        if (OnLevelFinished != null)
+        {
+            OnLevelFinished();
+        }
     }
 }

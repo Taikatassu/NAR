@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -16,6 +17,13 @@ public class UIManager : MonoBehaviour
     GameObject scoreDisplay;
     [SerializeField]
     GameObject skipIntroButtonHolder;
+    [SerializeField]
+    Image[] uiButtonImagesToFade;
+    Text[] uiButtonTextsToFade;
+    float[] uiButtonOriginalAlphas;
+    float uiButtonFadeStartTime;
+    float uiButtonFadeDuration = 5f;
+    bool uiButtonsFading = false;
 
     public enum EUIState
     {
@@ -27,9 +35,12 @@ public class UIManager : MonoBehaviour
 
     private void OnEnable()
     {
+        InitializeUIButtonFading();
+
         EventManager.OnPauseStateChange += OnPauseStateChanged;
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
         EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
+        EventManager.OnLevelFinished += OnLevelFinished;
     }
 
     private void OnDisable()
@@ -37,8 +48,10 @@ public class UIManager : MonoBehaviour
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
         EventManager.OnLevelIntroStart -= OnLevelIntroStart;
         EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
+        EventManager.OnLevelFinished -= OnLevelFinished;
     }
 
+    #region EventManager event subscribers
     private void OnPauseStateChanged(bool newState)
     {
         if (newState)
@@ -59,8 +72,24 @@ public class UIManager : MonoBehaviour
     private void OnLevelIntroFinished()
     {
         ChangeUIState(EUIState.HUD);
+
+        if (Application.isMobilePlatform)
+        {
+            StartUIButtonFade();
+        }
+        else
+        {
+            SetButtonAlphaToZero();
+        }
     }
 
+    private void OnLevelFinished()
+    {
+        ChangeUIState(EUIState.Intro);
+    }
+    #endregion
+
+    #region Button event subscribers
     public void PauseButtonPressed(bool newState)
     {
         EventManager.BroadcastPauseStateChange(newState);
@@ -76,6 +105,98 @@ public class UIManager : MonoBehaviour
     {
         Application.Quit();
     }
+    #endregion
+
+    private void Update()
+    {
+        ManageUIButtonFading();
+    }
+
+    #region UI button fade management
+    private void ManageUIButtonFading()
+    {
+        if (uiButtonsFading)
+        {
+            UpdateUIButtonFadeState();
+        }
+    }
+
+    private void InitializeUIButtonFading()
+    {
+        uiButtonOriginalAlphas = new float[uiButtonImagesToFade.Length];
+        uiButtonTextsToFade = new Text[uiButtonImagesToFade.Length];
+
+        for (int i = 0; i < uiButtonImagesToFade.Length; i++)
+        {
+            uiButtonOriginalAlphas[i] = uiButtonImagesToFade[i].color.a;
+            uiButtonTextsToFade[i] = uiButtonImagesToFade[i].GetComponentInChildren<Text>();
+
+            Color newColor = uiButtonTextsToFade[i].color;
+            newColor.a = uiButtonOriginalAlphas[i];
+            uiButtonTextsToFade[i].color = newColor;
+        }
+    }
+
+    private void StartUIButtonFade()
+    {
+        ResetUIButtonFadeState();
+
+        uiButtonFadeStartTime = Time.time;
+        uiButtonsFading = true;
+    }
+
+    private void UpdateUIButtonFadeState()
+    {
+        float timeSinceStarted = Time.time - uiButtonFadeStartTime;
+        float percentageCompleted = timeSinceStarted / uiButtonFadeDuration;
+
+        for (int i = 0; i < uiButtonImagesToFade.Length; i++)
+        {
+            float newAlpha = Mathf.Lerp(uiButtonOriginalAlphas[i], 0, percentageCompleted);
+
+            Color newColor = uiButtonImagesToFade[i].color;
+            newColor.a = newAlpha;
+            uiButtonImagesToFade[i].color = newColor;
+
+            newColor = uiButtonTextsToFade[i].color;
+            newColor.a = newAlpha;
+            uiButtonTextsToFade[i].color = newColor;
+        }
+
+        if (percentageCompleted >= 1)
+        {
+            uiButtonsFading = false;
+        }
+    }
+
+    private void ResetUIButtonFadeState()
+    {
+        for (int i = 0; i < uiButtonImagesToFade.Length; i++)
+        {
+            Color newColor = uiButtonImagesToFade[i].color;
+            newColor.a = uiButtonOriginalAlphas[i];
+            uiButtonImagesToFade[i].color = newColor;
+
+            newColor = uiButtonTextsToFade[i].color;
+            newColor.a = uiButtonOriginalAlphas[i];
+            uiButtonTextsToFade[i].color = newColor;
+        }
+    }
+
+    private void SetButtonAlphaToZero()
+    {
+        for (int i = 0; i < uiButtonImagesToFade.Length; i++)
+        {
+            Color newColor = uiButtonImagesToFade[i].color;
+            newColor.a = 0;
+            uiButtonImagesToFade[i].color = newColor;
+
+            newColor = uiButtonTextsToFade[i].color;
+            newColor.a = 0;
+            uiButtonTextsToFade[i].color = newColor;
+        }
+    }
+    #endregion
 
     private void ChangeUIState(EUIState newState)
     {

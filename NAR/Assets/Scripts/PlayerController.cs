@@ -8,18 +8,13 @@ public class PlayerController : MonoBehaviour
     // TODO: Create proper mesh for the player (spaceship, scifi-bike?)
     // Implement animations / effect for when the player is moving sideways
     //      - Or just tilt the player mesh slightly to the moving direction?
-    // Add a sideways dash feature? (cooldown / double tap to activate?)
 
     [SerializeField]
     float zSpeed = 4f;
     [SerializeField]
     float xSpeed = 3f;
-
-    //[SerializeField]
-    //Slider scoreMultiplierTimerSlider;
+    
     int scoreMultiplier = 1;
-    //float scoreMultiplierStartTime = 0f;
-    //float scoreMultiplierDuration = 12f;
     float speedMultiplierPerScoreMultiplier = 0.25f;
 
     bool controlsLocked = false;
@@ -49,7 +44,6 @@ public class PlayerController : MonoBehaviour
 
     float scoreMultiplierUseInvulnerabilityDuration = 1f;
     float scoreMultiplierUseInvulnerabilityStartTime = 0f;
-    //int[] scoreMultiplierTiers = new int[6] { 1, 5, 10, 15, 20, 25 };
 
     [SerializeField]
     GameObject invulnerabilityShield;
@@ -62,10 +56,8 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished += OnLevelIntroFinished;
         EventManager.OnLevelRestart += OnLevelRestart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
-        //EventManager.OnCollectibleCollected += OnCollectibleCollected;
-        //EventManager.OnObstacleHit += OnObstacleHit;
-        //EventManager.OnRequestCurrentScoreMultiplier += OnRequestCurrentScoreMultiplier;
         EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
+        EventManager.OnLevelFinished += OnLevelFinished;
     }
 
     private void OnDisable()
@@ -74,10 +66,8 @@ public class PlayerController : MonoBehaviour
         EventManager.OnLevelIntroFinished -= OnLevelIntroFinished;
         EventManager.OnLevelRestart -= OnLevelRestart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
-        //EventManager.OnCollectibleCollected -= OnCollectibleCollected;
-        //EventManager.OnObstacleHit -= OnObstacleHit;
-        //EventManager.OnRequestCurrentScoreMultiplier -= OnRequestCurrentScoreMultiplier;
         EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
+        EventManager.OnLevelFinished -= OnLevelFinished;
     }
 
     #region Subscribers
@@ -106,26 +96,11 @@ public class PlayerController : MonoBehaviour
         controlsLocked = false;
     }
 
-    //private void OnCollectibleCollected(int collectibleTypeIndex)
-    //{
-    //    CollectibleController.ECollectibleType collectibleType = (CollectibleController.ECollectibleType)collectibleTypeIndex;
-
-    //    switch (collectibleType)
-    //    {
-    //        case CollectibleController.ECollectibleType.ScoreMultiplier:
-    //            IncreaseScoreMultiplier();
-    //            break;
-    //        default:
-    //            break;
-    //    }
-    //}
-
     public void OnObstacleHit(GameObject hitObstacle)
     {
         // Check if invulnerable saves are not available
-        if (!invulnerabilityShield.activeSelf)
+        if (!controlsLocked && !invulnerabilityShield.activeSelf)
         {
-            //DecreaseScoreMultiplier();
             EventManager.BroadcastPlayerDamaged();
             scoreMultiplierUseInvulnerabilityStartTime = Time.time;
             invulnerabilityShield.SetActive(true);
@@ -135,19 +110,21 @@ public class PlayerController : MonoBehaviour
             hitObstacle.GetComponent<ObstacleController>().Despawn();
         }
     }
-
-    //private int OnRequestCurrentScoreMultiplier()
-    //{
-    //    return scoreMultiplier;
-    //}
-
     private void OnScoreMultiplierChange(int newScoreMultiplier, int newScoreMultiplierTier)
     {
         scoreMultiplier = newScoreMultiplier;
     }
+
+    private void OnLevelFinished()
+    {
+        controlsLocked = true;
+        ResetDash();
+        currentXVelocity = 0f;
+        invulnerabilityShield.SetActive(true);
+    }
     #endregion
 
-    #region Dash
+    #region Dash & Speed management
     private void CheckForDashInput()
     {
         int newInputDirection = 0;
@@ -203,6 +180,14 @@ public class PlayerController : MonoBehaviour
     private void ResetDash()
     {
         isDashing = false;
+    }
+
+    private void ResetSpeed()
+    {
+        ResetDash();
+        currentXVelocity = 0f;
+        currentZVelocity = zSpeed;
+        scoreMultiplier = EventManager.BroadcastRequestCurrentScoreMultiplier();
     }
     #endregion
 
@@ -267,76 +252,6 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
-    #region Score / speed multiplier management
-    private void ResetSpeed()
-    {
-        ResetDash();
-        currentXVelocity = 0f;
-        currentZVelocity = zSpeed;
-        scoreMultiplier = EventManager.BroadcastRequestCurrentScoreMultiplier();
-        //ResetScoreMultiplier();
-    }
-
-    //private void ManageSpeedMultiplier()
-    //{
-    //    if (scoreMultiplier > 1)
-    //    {
-    //        float scoreMultiplierTimer = Time.time - scoreMultiplierStartTime;
-    //        float scoreMultiplierTimerPercentage = scoreMultiplierTimer / scoreMultiplierDuration;
-    //        float scoreMultiplierTimeLeft = Mathf.Clamp01(1 - scoreMultiplierTimerPercentage);
-
-    //        scoreMultiplierTimerSlider.value = scoreMultiplierTimeLeft;
-
-    //        if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
-    //        {
-    //            ResetScoreMultiplier();
-    //            EventManager.BroadcastLevelRestart();
-    //        }
-    //    }
-    //}
-
-    //private int GetScoreMultiplierTierIndex(int scoreMultiplier)
-    //{
-    //    for (int i = 0; i < scoreMultiplierTiers.Length - 1; i++)
-    //    {
-    //        if (scoreMultiplier < scoreMultiplierTiers[i + 1])
-    //        {
-    //            return i;
-    //        }
-    //    }
-
-    //    return scoreMultiplierTiers.Length - 1;
-    //}
-
-    //private void IncreaseScoreMultiplier()
-    //{
-    //    scoreMultiplierStartTime = Time.time;
-    //    scoreMultiplier++;
-
-    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    //}
-
-    //private void DecreaseScoreMultiplier()
-    //{
-    //    scoreMultiplier = scoreMultiplierTiers[GetScoreMultiplierTierIndex(scoreMultiplier)] - 1;
-
-    //    if (scoreMultiplier < 1)
-    //    {
-    //        ResetScoreMultiplier();
-    //        EventManager.BroadcastLevelRestart();
-    //    }
-
-    //    scoreMultiplierUseInvulnerabilityStartTime = Time.time;
-    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    //}
-
-    //private void ResetScoreMultiplier()
-    //{
-    //    scoreMultiplier = 1;
-    //    EventManager.BroadcastScoreMultiplierChange(scoreMultiplier, GetScoreMultiplierTierIndex(scoreMultiplier));
-    //}
-    #endregion
-
     #region Button input detection (mobile)
     public void XInputButtonPressed(int direction)
     {
@@ -376,4 +291,7 @@ public class PlayerController : MonoBehaviour
         }
     }
     #endregion
+
+
+    
 }

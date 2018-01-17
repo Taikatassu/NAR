@@ -32,7 +32,6 @@ public class CollectibleController : MonoBehaviour
 
     private void OnDisable()
     {
-        //EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
     }
 
@@ -53,7 +52,6 @@ public class CollectibleController : MonoBehaviour
         transform.position = spawnPosition;
 
         SetColor(EventManager.BroadcastRequestCurrentEnvironmentColor());
-        //EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
         
         despawnAreaCollider.radius = despawnAreaColliderOriginalRadius + EventManager.BroadcastRequestCurrentScoreMultiplier() * 0.2f;
@@ -68,7 +66,6 @@ public class CollectibleController : MonoBehaviour
 
     public void Despawn()
     {
-        //EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent -= OnTriggerEnterEvent;
 
         despawnAreaCollider.radius = despawnAreaColliderOriginalRadius;
@@ -95,11 +92,6 @@ public class CollectibleController : MonoBehaviour
     }
 
     #region Color management
-    //private void OnEnvironmentColorChange(Color color)
-    //{
-    //    SetColor(color);
-    //}
-
     private void SetColor(Color color)
     {
         color = ColorHelper.FindComplementaryColor(color);

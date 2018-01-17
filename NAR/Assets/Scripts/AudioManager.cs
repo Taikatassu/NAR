@@ -25,6 +25,7 @@ public class AudioManager : MonoBehaviour
     {
         EventManager.OnLevelIntroStart += OnLevelIntroStart;
         EventManager.OnPauseStateChange += OnPauseStateChanged;
+        EventManager.OnRequestCurrentAudioTimeInfo += OnRequestCurrentAudioTimeInfo;
 
         SetAudioPopUpText("");
         audioPopUpTextOriginalAlpha = audioPopUpText.color.a;
@@ -35,6 +36,7 @@ public class AudioManager : MonoBehaviour
     {
         EventManager.OnLevelIntroStart -= OnLevelIntroStart;
         EventManager.OnPauseStateChange -= OnPauseStateChanged;
+        EventManager.OnRequestCurrentAudioTimeInfo -= OnRequestCurrentAudioTimeInfo;
     }
 
     private void PlayRandomBackgroundMusic()
@@ -69,6 +71,12 @@ public class AudioManager : MonoBehaviour
     {
         PlayRandomBackgroundMusic();
     }
+
+    private void OnRequestCurrentAudioTimeInfo(out float trackDuration, out float currentTrackTime)
+    {
+        trackDuration = backgroundMusicSources[backgroundMusicIndex].clip.length;
+        currentTrackTime = backgroundMusicSources[backgroundMusicIndex].time;
+    }
     #endregion
 
     #region Update loop
@@ -89,6 +97,7 @@ public class AudioManager : MonoBehaviour
         audioPopUpStartTime = Time.time;
         SetAudioPopUpText(backgroundMusicSources[backgroundMusicIndex].clip.name + "  ");
         ColorHelper.SetTextColor(audioPopUpText, EventManager.BroadcastRequestCurrentEnvironmentColor(), true);
+        audioPopUpText.gameObject.SetActive(true);
         displayingAudioPopUp = true;
     }
 
@@ -98,6 +107,7 @@ public class AudioManager : MonoBehaviour
         audioPopUpTargetPosition = new Vector3(Screen.width / 2, Screen.height * 0.05f, 0);
         SetAudioPopUpText("");
         displayingAudioPopUp = false;
+        audioPopUpText.gameObject.SetActive(false);
 
         Color audioPopUpFadeColor;
         audioPopUpFadeColor = audioPopUpText.color;

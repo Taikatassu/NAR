@@ -30,7 +30,6 @@ TODO:
 	- Quit (Exits the application)
 	- Background scene with the ship speeding through the game environment
 - Change color on all text and menus according to environment
-- Implement goal reaching
 - Jump? (can jump over spawning obstacles)
 - Tie background music to speed (change to faster paced music at certain speed multipliers)?
 - Obstacle spawn rate follows audio bpm
@@ -41,7 +40,7 @@ TODO:
 - Increase player movement speed by increasing timescale, instead of various variables in script?
 	- This would ensure similar obstacle spawning even at higher speeds
 	- Possible problems
-	- Too difficult?
+	- Too difficult gameplay-wise?
 - Proper trail implementation
 	- Fix player trail gaps
 	- Trail segment pooling
@@ -52,9 +51,13 @@ TODO:
 	- Does the feature bring any new value to the gameplay
 - Add speed multiplier tiers to 50-60
 - Bloom glow with audio
-- Input button opacity decreases as the level proggresses (attach to score or scoreMultiplier value)
-	- This way the player is reminded of the button positions at the start of the level, but the buttons
-	  still get out of the way of visibility shortly after
+- Improve directional obstacle spawning
+	- Calculate direction from player movement vector
+- Implement goal reaching
+	- Calculate goal movement speed from player movement vector and remainging music duration
+	- Lock goal to ground grid when close enough to the player
+	- Steer player in the middle of the nearest line
+
 
 
 DONE:
@@ -86,6 +89,10 @@ DONE:
 	- Standard shader with texture tested (is worse)
 - Display song name in the pause menu?
 - Fix the gaps in enemy attack obstacle spawn line
+- Input button opacity decreases as the level proggresses (attach to score or scoreMultiplier value)
+	- This way the player is reminded of the button positions at the start of the level, but the buttons
+	  still get out of the way of visibility shortly after
+- Enemy color changes with environment 
 
 
 

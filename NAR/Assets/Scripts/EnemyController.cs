@@ -6,6 +6,10 @@ using UnityEngine;
 public class EnemyController : MonoBehaviour
 {
     ObjectMovementController movementController;
+    [SerializeField]
+    GameObject enemyMeshHolder;
+    Material[] enemyMaterials;
+    Material enemyEffectMaterial;
 
     float preferredXDistanceFromPlayer = 1.5f;
     float preferredXDistanceErrorMargin = 0.25f;
@@ -20,10 +24,6 @@ public class EnemyController : MonoBehaviour
     float currentZVelocity = 0f;
     float refZVelocity = 0f;
     float zAccelerationLag = 0.15f;
-    float zAccelerationLagSpeedBump = 1f;
-
-    float scoreMultiplier = 1f;
-    float speedMultiplierPerScoreMultiplier = 0.25f;
 
     [SerializeField]
     ParticleSystem chargeEffect;
@@ -42,12 +42,31 @@ public class EnemyController : MonoBehaviour
 
     private void OnDisable()
     {
-        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
+        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
+    }
+
+    private void OnEnvironmentColorChange(Color newEnvironmentColor)
+    {
+        for (int i = 0; i < enemyMaterials.Length; i++)
+        {
+            enemyMaterials[i].SetColor("_EmissionColor", newEnvironmentColor);
+        }
+
+        enemyEffectMaterial.SetColor("_TintColor", newEnvironmentColor);
     }
 
     public void Initialize()
     {
         movementController = GetComponent<ObjectMovementController>();
+
+        Renderer[] enemyRenderers = enemyMeshHolder.GetComponentsInChildren<Renderer>();
+        enemyMaterials = new Material[enemyRenderers.Length];
+        enemyEffectMaterial = chargeEffect.GetComponentInChildren<Renderer>().material;
+
+        for (int i = 0; i < enemyMaterials.Length; i++)
+        {
+            enemyMaterials[i] = enemyRenderers[i].material;
+        }
 
         Despawn();
     }
@@ -57,8 +76,16 @@ public class EnemyController : MonoBehaviour
         levelController = levelControllerReference;
         transform.position = spawnPosition;
 
-        scoreMultiplier = EventManager.BroadcastRequestCurrentScoreMultiplier();
-        EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
+        EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
+
+        Color environmentColor = EventManager.BroadcastRequestCurrentEnvironmentColor();
+
+        for (int i = 0; i < enemyMaterials.Length; i++)
+        {
+            enemyMaterials[i].SetColor("_EmissionColor", environmentColor);
+        }
+
+        enemyEffectMaterial.SetColor("_TintColor", environmentColor);
 
         movementController.Activate();
 
@@ -67,7 +94,7 @@ public class EnemyController : MonoBehaviour
 
     public void Despawn()
     {
-        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
+        EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
 
         ResetEnemyValues();
         movementController.Deactivate();
@@ -93,22 +120,12 @@ public class EnemyController : MonoBehaviour
         if (!isAttacking)
         {
             int xDirection = 0;
-            //if (transform.position.x > preferredXDistanceFromPlayer)
-            //{
-            //    xDirection = -1;
-            //}
-            //else if (transform.position.x < -preferredXDistanceFromPlayer)
-            //{
-            //    xDirection = 1;
-            //}
 
-
-
-            if(transform.position.x > preferredXDistanceFromPlayer + preferredXDistanceErrorMargin)
+            if (transform.position.x > preferredXDistanceFromPlayer + preferredXDistanceErrorMargin)
             {
                 xDirection = -1;
             }
-            else if(transform.position.x < preferredXDistanceFromPlayer - preferredXDistanceErrorMargin && transform.position.x >= 0)
+            else if (transform.position.x < preferredXDistanceFromPlayer - preferredXDistanceErrorMargin && transform.position.x >= 0)
             {
                 xDirection = 1;
             }
@@ -120,9 +137,6 @@ public class EnemyController : MonoBehaviour
             {
                 xDirection = 1;
             }
-
-
-
 
             float targetXVelocity = xSpeed * xDirection;
             currentXVelocity = Mathf.SmoothDamp(currentXVelocity, targetXVelocity, ref refXVelocity, xAccelerationLag);
@@ -150,7 +164,7 @@ public class EnemyController : MonoBehaviour
             }
         }
 
-        float targetZVelocity = zSpeed * zSpeedCatchUpMultiplier * zDirection * zAccelerationLagSpeedBump * attackZSpeedMultiplier;
+        float targetZVelocity = zSpeed * zSpeedCatchUpMultiplier * zDirection * attackZSpeedMultiplier;
         currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
 
         transform.position += new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime;
@@ -163,19 +177,6 @@ public class EnemyController : MonoBehaviour
         {
             ManageCharging();
         }
-    }
-
-    private void OnScoreMultiplierChange(int newScoreMultiplier, int newScoreMultiplierTier)
-    {
-        scoreMultiplier = newScoreMultiplier;
-        //zAccelerationLag = zAccelerationLagSpeedBump;
-        //StartCoroutine(ResetZAccelerationLag(0.5f, 0.15f));
-    }
-
-    IEnumerator ResetZAccelerationLag(float waitTime, float resetValue)
-    {
-        yield return new WaitForSeconds(waitTime);
-        zAccelerationLag = resetValue;
     }
 
     private void ManageCharging()
@@ -216,13 +217,10 @@ public class EnemyController : MonoBehaviour
         isCharging = false;
         isAttacking = false;
         attackZSpeedMultiplier = attackZSpeedMultiplierMin;
-        //StopCoroutine("ResetZAccelerationLag");
-        zAccelerationLag = 0.15f;
     }
 
     private void OnTriggerEnter(Collider col)
     {
-
         if (isCharging && col.CompareTag("PlayerTrail"))
         {
             Despawn();
