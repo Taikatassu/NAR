@@ -10,6 +10,8 @@ public class GoalController : MonoBehaviour
     float remainingLevelTime = 0f;
     float levelDuration = 0f;
     float currentLevelTime = 0f;
+    float audioFinishThreshold = 5f;
+    bool audioFinishThresholdReached = false;
 
     private void OnEnable()
     {
@@ -55,10 +57,14 @@ public class GoalController : MonoBehaviour
             Vector3 newPosition = Vector3.zero;
             newPosition.z = newGoalZPosition;
 
+            Vector2 currentGridOffset = EventManager.BroadcastRequestGridOffset();
+            newPosition -= new Vector3(currentGridOffset.x, 0, currentGridOffset.y);
+
             transform.position = newPosition;
 
-            if(remainingLevelTime < 5f)
+            if (remainingLevelTime < audioFinishThreshold && !audioFinishThresholdReached)
             {
+                audioFinishThresholdReached = true;
                 EventManager.BroadcastLevelFinished();
             }
 
@@ -73,6 +79,7 @@ public class GoalController : MonoBehaviour
     {
         EventManager.BroadcastRequestCurrentAudioTimeInfo(out levelDuration, out currentLevelTime);
         remainingLevelTime = levelDuration - currentLevelTime;
+        audioFinishThresholdReached = false;
 
         goalReachingOn = true;
     }

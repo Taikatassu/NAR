@@ -24,6 +24,7 @@ public class UIManager : MonoBehaviour
     float uiButtonFadeStartTime;
     float uiButtonFadeDuration = 5f;
     bool uiButtonsFading = false;
+    EUIState oldState = EUIState.Disabled;
 
     public enum EUIState
     {
@@ -60,7 +61,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            ChangeUIState(EUIState.HUD);
+            ChangeUIState(oldState);
         }
     }
 
@@ -228,6 +229,11 @@ public class UIManager : MonoBehaviour
                 break;
             default:
                 break;
+        }
+
+        if (newState != EUIState.PauseMenu)
+        {
+            oldState = newState;
         }
     }
 

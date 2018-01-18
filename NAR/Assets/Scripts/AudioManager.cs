@@ -104,7 +104,7 @@ public class AudioManager : MonoBehaviour
     private void ResetAudioPopUp()
     {
         audioPopUpText.rectTransform.position = new Vector3(Screen.width / 2, Screen.height * -0.1f, 0);
-        audioPopUpTargetPosition = new Vector3(Screen.width / 2, Screen.height * 0.05f, 0);
+        audioPopUpTargetPosition = new Vector3(Screen.width / 2, Screen.height * 0.035f, 0);
         SetAudioPopUpText("");
         displayingAudioPopUp = false;
         audioPopUpText.gameObject.SetActive(false);

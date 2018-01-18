@@ -97,6 +97,10 @@ public class LevelController : MonoBehaviour
     int[] totalCollectedCollectibles;
     int[] currentCollectedCollectibles;
 
+    [SerializeField]
+    Text skipInfoText;
+    bool skipButtonPressed = false;
+
     bool levelFinished = false;
     bool isPaused = false;
 
@@ -234,13 +238,13 @@ public class LevelController : MonoBehaviour
         {
             EventManager.BroadcastPauseStateChange(!isPaused);
         }
+        else if (!isPaused & (runningLevelIntro || levelFinished) && Input.anyKeyDown)
+        {
+            TrySkipIntro();
+        }
         else if (Input.GetKeyDown(KeyCode.R))
         {
             EventManager.BroadcastLevelRestart();
-        }
-        else if (!isPaused & (runningLevelIntro || levelFinished) && Input.anyKeyDown)
-        {
-            SkipIntro();
         }
 
         if (!isPaused)
@@ -320,6 +324,8 @@ public class LevelController : MonoBehaviour
             currentCollectedCollectibles[i] = 0;
         }
 
+        skipInfoText.gameObject.SetActive(false);
+
         levelStartTime = Time.time;
         runningLevelIntro = true;
         EventManager.BroadcastLevelIntroStart();
@@ -373,19 +379,43 @@ public class LevelController : MonoBehaviour
 
         managingScoreMultiplier = true;
 
+        skipInfoText.gameObject.SetActive(false);
+
         runningLevelIntro = false;
         EventManager.BroadcastLevelIntroFinished();
     }
 
-    public void SkipIntro()
+    public void TrySkipIntro()
     {
         if (runningLevelIntro)
         {
-            FinishLevelIntro();
+            if (skipButtonPressed)
+            {
+                skipButtonPressed = false;
+                skipInfoText.gameObject.SetActive(false);
+                FinishLevelIntro();
+            }
+            else
+            {
+                skipInfoText.text = "Tap to skip intro";
+                skipInfoText.gameObject.SetActive(true);
+                skipButtonPressed = true;
+            }
         }
         else if (levelFinished)
         {
-            RestartLevel();
+            if (skipButtonPressed)
+            {
+                skipButtonPressed = false;
+                skipInfoText.gameObject.SetActive(false);
+                RestartLevel();
+            }
+            else
+            {
+                skipInfoText.text = "Tap to play again";
+                skipInfoText.gameObject.SetActive(true);
+                skipButtonPressed = true;
+            }
         }
     }
     #endregion
@@ -549,6 +579,8 @@ public class LevelController : MonoBehaviour
         scorePopUpFadeColor = scorePopUpText.GetComponent<Shadow>().effectColor;
         scorePopUpFadeColor.a = scorePopUpShadowOriginalAlpha;
         scorePopUpText.GetComponent<Shadow>().effectColor = scorePopUpFadeColor;
+
+        scorePopUpRefVelocity = Vector3.zero;
     }
 
     private void SetScorePopUpText(string newPopUpText)

@@ -26,6 +26,7 @@ public class ObstacleController : MonoBehaviour
     float obstacleMeshAnimationSmoothTime = 0.5f;
     float spawnTime = 0f;
     float spawnAnimationDelay = 0.5f;
+    bool spawnMeshPositionInitialized = false;
 
     [SerializeField]
     float distanceFromCameraToSTartFade;
@@ -53,6 +54,12 @@ public class ObstacleController : MonoBehaviour
     {
         if (!isPaused)
         {
+            if (!spawnMeshPositionInitialized && Time.time - spawnTime > spawnAnimationDelay / 2)
+            {
+                spawnMeshPositionInitialized = true;
+                obstacleMesh.localPosition = new Vector3(0, obstacleMeshStartPosY, 0);
+            }
+
             if (Time.time - spawnTime > spawnAnimationDelay)
             {
                 RunSpawnAnimation();
@@ -92,7 +99,7 @@ public class ObstacleController : MonoBehaviour
         ModifyGridOffset(EOffsetDirection.XOffset, currentGridOffset.x, false);
         ModifyGridOffset(EOffsetDirection.ZOffset, currentGridOffset.y, false);
 
-        obstacleMesh.localPosition = new Vector3(0, obstacleMeshStartPosY, 0);
+        obstacleMesh.localPosition = new Vector3(0, -1.5f, 0);
 
         movementController.Activate();
 
@@ -119,6 +126,8 @@ public class ObstacleController : MonoBehaviour
         color = obstacleMaterial.GetColor("_OutsideColor");
         color.a = originalAlpha2;
         obstacleMaterial.SetColor("_OutsideColor", color);
+
+        spawnMeshPositionInitialized = false;
     }
 
     private void OnPlayerMovement(Vector3 playerMovementVector)

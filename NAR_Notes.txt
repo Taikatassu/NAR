@@ -53,10 +53,6 @@ TODO:
 - Bloom glow with audio
 - Improve directional obstacle spawning
 	- Calculate direction from player movement vector
-- Implement goal reaching
-	- Calculate goal movement speed from player movement vector and remainging music duration
-	- Lock goal to ground grid when close enough to the player
-	- Steer player in the middle of the nearest line
 
 
 
@@ -93,6 +89,10 @@ DONE:
 	- This way the player is reminded of the button positions at the start of the level, but the buttons
 	  still get out of the way of visibility shortly after
 - Enemy color changes with environment 
+- Implement goal reaching
+	- Calculate goal movement speed from player movement vector and remainging music duration
+	- Lock goal to ground grid when close enough to the player
+	- Steer player in the middle of the nearest line
 
 
 
