@@ -14,7 +14,7 @@ public class ObstacleController : MonoBehaviour
     float originalAlpha1 = 0.0f;
     float originalAlpha2 = 0.0f;
 
-    float gridSpacing = 3;
+    //float gridSpacing = 3;
 
     [SerializeField]
     Transform obstacleMesh;
@@ -73,10 +73,10 @@ public class ObstacleController : MonoBehaviour
         movementController = GetComponent<ObjectMovementController>();
 
         obstacleMaterial = GetComponentInChildren<Renderer>().material;
-        originalAlpha1 = obstacleMaterial.GetColor("_GridColor").a;
-        originalAlpha2 = obstacleMaterial.GetColor("_OutsideColor").a;
+        originalAlpha1 = obstacleMaterial.GetColor("_Color").a;
+        originalAlpha2 = obstacleMaterial.GetColor("_EmissionColor").a;
 
-        gridSpacing = obstacleMaterial.GetFloat("_GridSpacing");
+        //gridSpacing = obstacleMaterial.GetFloat("_GridSpacing");
 
         fadeZoneDistance = distanceFromCameraToSTartFade - distanceFromCameraToFinishFade;
         cameraTransform = Camera.main.transform;
@@ -96,8 +96,8 @@ public class ObstacleController : MonoBehaviour
         EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
         triggerController.OnTriggerEnterEvent += OnTriggerEnterEvent;
 
-        ModifyGridOffset(EOffsetDirection.XOffset, currentGridOffset.x, false);
-        ModifyGridOffset(EOffsetDirection.ZOffset, currentGridOffset.y, false);
+        //ModifyGridOffset(EOffsetDirection.XOffset, currentGridOffset.x, false);
+        //ModifyGridOffset(EOffsetDirection.ZOffset, currentGridOffset.y, false);
 
         obstacleMesh.localPosition = new Vector3(0, -1.5f, 0);
 
@@ -119,17 +119,17 @@ public class ObstacleController : MonoBehaviour
 
         gameObject.SetActive(false);
 
-        Color color = obstacleMaterial.GetColor("_GridColor");
+        Color color = obstacleMaterial.GetColor("_Color");
         color.a = originalAlpha1;
-        obstacleMaterial.SetColor("_GridColor", color);
+        obstacleMaterial.SetColor("_Color", color);
 
-        color = obstacleMaterial.GetColor("_OutsideColor");
-        color.a = originalAlpha2;
-        obstacleMaterial.SetColor("_OutsideColor", color);
+        //color = obstacleMaterial.GetColor("_EmissionColor");
+        //color.a = originalAlpha2;
+        obstacleMaterial.SetColor("_EmissionColor", color);
 
         spawnMeshPositionInitialized = false;
     }
-
+    Color emissionColor;
     private void OnPlayerMovement(Vector3 playerMovementVector)
     {
         //if (playerMovementVector.z != 0)
@@ -147,14 +147,14 @@ public class ObstacleController : MonoBehaviour
         {
             float percentageFaded = 1 - ((distanceFromCamera - distanceFromCameraToFinishFade) / fadeZoneDistance);
             float newAlpha = Mathf.Lerp(originalAlpha1, 0, percentageFaded);
-            Color color = obstacleMaterial.GetColor("_GridColor");
+            Color color = obstacleMaterial.GetColor("_Color");
             color.a = newAlpha;
-            obstacleMaterial.SetColor("_GridColor", color);
+            obstacleMaterial.SetColor("_Color", color);
 
-            newAlpha = Mathf.Lerp(originalAlpha2, 0, percentageFaded);
-            color = obstacleMaterial.GetColor("_OutsideColor");
-            color.a = newAlpha;
-            obstacleMaterial.SetColor("_OutsideColor", color);
+            newAlpha = Mathf.Lerp(originalAlpha2, 0f, percentageFaded);
+            //Color emissionColor = obstacleMaterial.GetColor("_EmissionColor");
+            Color finalColor = emissionColor * Mathf.LinearToGammaSpace(newAlpha);
+            obstacleMaterial.SetColor("_EmissionColor", finalColor);
         }
 
         if (transform.position.z <= -10)
@@ -170,10 +170,10 @@ public class ObstacleController : MonoBehaviour
 
     private void OnTriggerEnterEvent(Collider col)
     {
+        PlayerController playerController = col.GetComponentInParent<PlayerController>();
         if (col.CompareTag("Player"))
         {
-            col.GetComponent<PlayerController>().OnObstacleHit(gameObject);
-            //EventManager.BroadcastObstacleHit(gameObject);
+            playerController.OnObstacleHit(gameObject);
         }
     }
 
@@ -184,50 +184,14 @@ public class ObstacleController : MonoBehaviour
 
     private void SetColor(Color color)
     {
-        float oldAlpha = obstacleMaterial.GetColor("_GridColor").a;
+        float oldAlpha = obstacleMaterial.GetColor("_Color").a;
         color.a = oldAlpha;
-        obstacleMaterial.SetColor("_GridColor", color);
+        obstacleMaterial.SetColor("_Color", color);
 
-        oldAlpha = obstacleMaterial.GetColor("_OutsideColor").a;
-        color.a = oldAlpha;
-        obstacleMaterial.SetColor("_OutsideColor", color);
-    }
-
-    private void ModifyGridOffset(EOffsetDirection offsetToChange, float offsetValue, bool addToExistingOffset = true)
-    {
-        string offsetFloatName = "";
-
-        switch (offsetToChange)
-        {
-            case EOffsetDirection.XOffset:
-                offsetFloatName = "_PosXOffset";
-                break;
-            case EOffsetDirection.ZOffset:
-                offsetFloatName = "_PosZOffset";
-                break;
-            default:
-                break;
-        }
-
-        if (addToExistingOffset)
-        {
-            float oldOffset = obstacleMaterial.GetFloat(offsetFloatName);
-            float newOffset = oldOffset + offsetValue;
-            if (newOffset >= gridSpacing / 2)
-            {
-                newOffset -= gridSpacing;
-            }
-            else if (newOffset <= -gridSpacing / 2)
-            {
-                newOffset += gridSpacing;
-            }
-
-            obstacleMaterial.SetFloat(offsetFloatName, newOffset);
-        }
-        else
-        {
-            obstacleMaterial.SetFloat(offsetFloatName, offsetValue);
-        }
+        //oldAlpha = obstacleMaterial.GetColor("_EmissionColor").a;
+        //color.a = oldAlpha;
+        obstacleMaterial.SetColor("_EmissionColor", color);
+        emissionColor = color;
     }
 
     private void RunSpawnAnimation()

@@ -74,6 +74,8 @@ public class LevelController : MonoBehaviour
     Image scoreTimerSliderFillImage;
 
     [SerializeField]
+    TrailController playerTrailController;
+    [SerializeField]
     Slider scoreMultiplierTimerSlider;
     float scoreMultiplierStartTime = 0f;
     float scoreMultiplierDuration = 12f;
@@ -328,6 +330,9 @@ public class LevelController : MonoBehaviour
 
         levelStartTime = Time.time;
         runningLevelIntro = true;
+
+        playerTrailController.OnScoreMultiplierTimerChange(0, scoreMultiplierDuration);
+
         EventManager.BroadcastLevelIntroStart();
     }
 
@@ -465,6 +470,9 @@ public class LevelController : MonoBehaviour
             float scoreMultiplierTimeLeft = Mathf.Clamp01(1 - scoreMultiplierTimerPercentage);
 
             scoreMultiplierTimerSlider.value = scoreMultiplierTimeLeft;
+
+            float scoreMultiplierTimerValue = Time.time - scoreMultiplierStartTime;
+            playerTrailController.OnScoreMultiplierTimerChange(scoreMultiplierTimerValue, scoreMultiplierDuration);
 
             if (Time.time - scoreMultiplierStartTime > scoreMultiplierDuration)
             {

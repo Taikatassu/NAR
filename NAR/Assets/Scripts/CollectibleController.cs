@@ -96,9 +96,16 @@ public class CollectibleController : MonoBehaviour
     {
         color = ColorHelper.FindComplementaryColor(color);
 
-        float oldAlpha = collectibleMeshMaterial.GetColor("_TintColor").a;
+        float oldAlpha = collectibleMeshMaterial.GetColor("_Color").a;
         color.a = oldAlpha;
-        collectibleMeshMaterial.SetColor("_TintColor", color);
+        collectibleMeshMaterial.SetColor("_Color", color);
+
+        //oldAlpha = collectibleMeshMaterial.GetColor("_EmissionColor").a;
+        //color.a = oldAlpha;
+        //collectibleMeshMaterial.SetColor("_EmissionColor", color);
+
+        Color finalColor = color * Mathf.LinearToGammaSpace(2.5f);
+        collectibleMeshMaterial.SetColor("_EmissionColor", finalColor);
 
         oldAlpha = collectibleEffectMaterial.GetColor("_TintColor").a;
         color.a = oldAlpha;

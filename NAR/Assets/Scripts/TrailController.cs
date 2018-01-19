@@ -11,6 +11,7 @@ public class TrailController : MonoBehaviour
     [SerializeField]
     Material trailMaterial;
     [SerializeField]
+    float maxLifetime = 0.5f;
     float lifetime = 0.5f;
     [SerializeField]
     float minimumVertexDistance = 0.05f;
@@ -19,6 +20,13 @@ public class TrailController : MonoBehaviour
     List<Transform> trailSegments;
 
     Vector3 lastPlayerMovementVector = Vector3.zero;
+
+    public void OnScoreMultiplierTimerChange(float timerValue, float timerMaxValue)
+    {
+        float percentageCompleted = timerValue / timerMaxValue;
+
+        lifetime = Mathf.Lerp(maxLifetime, 0, percentageCompleted);
+    }
 
     private void OnEnable()
     {

@@ -1,3 +1,6 @@
+Mobile device screen sizes:
+http://screensiz.es/
+
 TODO:
 - If actually publishing, consider monetisation model?
 	- Unlockable skins
@@ -53,6 +56,8 @@ TODO:
 - Bloom glow with audio
 - Improve directional obstacle spawning
 	- Calculate direction from player movement vector
+- Make speed multiplier timer more visible / central to the player
+	- Indicate the timer with trail lenght?
 
 
 
