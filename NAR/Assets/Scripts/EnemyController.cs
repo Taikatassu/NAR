@@ -38,11 +38,14 @@ public class EnemyController : MonoBehaviour
     float attackDuration = 3f;
     float attackStartTime = 0f;
 
+    int currentScoreMultiplier = 0;
+
     LevelController levelController;
 
     private void OnDisable()
     {
         EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
+        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
     }
 
     private void OnEnvironmentColorChange(Color newEnvironmentColor)
@@ -53,6 +56,11 @@ public class EnemyController : MonoBehaviour
         }
 
         enemyEffectMaterial.SetColor("_TintColor", newEnvironmentColor);
+    }
+
+    private void OnScoreMultiplierChange(int newScoreMultiplier, int newScoreMultiplierTier)
+    {
+        currentScoreMultiplier = newScoreMultiplier;
     }
 
     public void Initialize()
@@ -77,6 +85,7 @@ public class EnemyController : MonoBehaviour
         transform.position = spawnPosition;
 
         EventManager.OnEnvironmentColorChange += OnEnvironmentColorChange;
+        EventManager.OnScoreMultiplierChange += OnScoreMultiplierChange;
 
         Color environmentColor = EventManager.BroadcastRequestCurrentEnvironmentColor();
 
@@ -95,6 +104,7 @@ public class EnemyController : MonoBehaviour
     public void Despawn()
     {
         EventManager.OnEnvironmentColorChange -= OnEnvironmentColorChange;
+        EventManager.OnScoreMultiplierChange -= OnScoreMultiplierChange;
 
         ResetEnemyValues();
         movementController.Deactivate();
@@ -143,7 +153,6 @@ public class EnemyController : MonoBehaviour
         }
 
         int zDirection = 1;
-        float zSpeedCatchUpMultiplier = 1f;
 
         if (!isAttacking)
         {
@@ -164,7 +173,7 @@ public class EnemyController : MonoBehaviour
             }
         }
 
-        float targetZVelocity = zSpeed * zSpeedCatchUpMultiplier * zDirection * attackZSpeedMultiplier;
+        float targetZVelocity = zSpeed * zDirection * attackZSpeedMultiplier;
         currentZVelocity = Mathf.SmoothDamp(currentZVelocity, targetZVelocity, ref refZVelocity, zAccelerationLag);
 
         transform.position += new Vector3(currentXVelocity, 0, currentZVelocity) * Time.deltaTime;
@@ -192,7 +201,7 @@ public class EnemyController : MonoBehaviour
     private void StartAttack()
     {
         currentXVelocity = 0f;
-        attackZSpeedMultiplier = attackZSpeedMultiplierMax;
+        attackZSpeedMultiplier = attackZSpeedMultiplierMax + ((currentScoreMultiplier - 1) * 0.25f); // = attackZSpeedMultiplierMax;
         attackStartTime = Time.time;
         isAttacking = true;
     }

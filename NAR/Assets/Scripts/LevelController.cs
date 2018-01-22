@@ -42,7 +42,7 @@ public class LevelController : MonoBehaviour
     float collectibleSpawnCooldownMin = 10f;
     float collectibleSpawnCooldownMax = 10f;
     int[] collectibleXAxisSpawnPositions = new int[7] { -3, -2, -1, 0, 1, 2, 3 };
-    int[] collectibleZAxisSpawnPositions = new int[4] { 10, 11, 12, 13 };
+    int[] collectibleZAxisSpawnPositions = new int[4] { 13, 14, 15, 16 };
 
     [SerializeField]
     GameObject enemyPrefab;
@@ -749,7 +749,7 @@ public class LevelController : MonoBehaviour
         Vector3 spawnPosition = Vector3.zero;
         spawnPosition.x = obstacleXAxisSpawnPositions[Random.Range(0, obstacleXAxisSpawnPositions.Length)];
         spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
-            + (currentScoreMultiplier - 1);
+            * (1 + ((currentScoreMultiplier - 1) * 0.25f));
 
         if (!TrySpawnObstacleAtPosition(spawnPosition))
         {
@@ -778,7 +778,8 @@ public class LevelController : MonoBehaviour
     private void SpawnFrontObstacle()
     {
         Vector3 spawnPosition = new Vector3(0f, 0f, 5f + (currentScoreMultiplier - 1));
-        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)];
+        spawnPosition.z = obstacleZAxisSpawnPositions[Random.Range(0, obstacleZAxisSpawnPositions.Length)]
+            * (1 + ((currentScoreMultiplier - 1) * 0.25f));
 
         if (ObstacleExistsInGivenPosition(spawnPosition))
         {

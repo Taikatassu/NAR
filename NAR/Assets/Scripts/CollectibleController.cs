@@ -100,10 +100,6 @@ public class CollectibleController : MonoBehaviour
         color.a = oldAlpha;
         collectibleMeshMaterial.SetColor("_Color", color);
 
-        //oldAlpha = collectibleMeshMaterial.GetColor("_EmissionColor").a;
-        //color.a = oldAlpha;
-        //collectibleMeshMaterial.SetColor("_EmissionColor", color);
-
         Color finalColor = color * Mathf.LinearToGammaSpace(2.5f);
         collectibleMeshMaterial.SetColor("_EmissionColor", finalColor);
 
