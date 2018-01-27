@@ -59,6 +59,21 @@ TODO:
 - Make speed multiplier timer more visible / central to the player
 	- Indicate the timer with trail lenght?
 
+- Can't fall more than one tier (would follow the optimal flow curve: player speed increasing)
+	- When taking damage and falling to the previous tier, the player would need to get to the next tier
+	  to gain a new invulnerability save
+- Better indications to obstacle spawns (shimmering effect before the actual spawn)
+- Faster obstacle spawn animation (rise speed)
+- Better charge and attack indication on the enemies
+	- Enemy should start charging after a short delay after arriving within player vision
+	  (so the charge effect start would be notable)
+	- Enemy should start attack after a short delay after finishing charge
+	  (so the charge effect ending would be notable)
+- Display collected collectibles
+- It takes too long for the first collectible to spawn
+- More leeway for obstacle collisions
+	- Smaller obstacle colliders
+	- Smaller player collider?
 
 
 DONE:
